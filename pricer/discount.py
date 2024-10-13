@@ -1,6 +1,18 @@
 import math
 
 def discount(r, t, freq=None):
+    """
+    Calculate the discount factor for a given interest rate and time period.
+    
+    Parameters:
+        r (float): The interest rate.
+        t (float): The time period.
+        freq (int, optional): The compounding frequency. If None, continuous compounding is assumed.
+
+    Returns:
+        float: The discount factor.
+    """
+
     if freq is None:
         return math.exp(-r * t)
     else:
