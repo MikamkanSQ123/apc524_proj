@@ -10,8 +10,8 @@ readme = "README.md"
 requires-python = ">=3.8"
 license = { file = "LICENSE" }
 authors = [
-    { name = "Zhuolin Xiang", email = "xiangzhuolin19@gmail.com" }, 
-    { name = "Haoqian Zhang", email = "zhanghq.chn@gmail.com" }, 
+    { name = "Zhuolin Xiang", email = "xiangzhuolin19@gmail.com" },
+    { name = "Haoqian Zhang", email = "zhanghq.chn@gmail.com" },
     { name = "Siqing Zou", email = "siqingzou1@gmail.com" },
 ]
 classifiers = [
@@ -22,7 +22,7 @@ classifiers = [
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11", 
+    "Programming Language :: Python :: 3.11",
     "Topic :: Finance/Investment",
     "Typing :: Typed",
 ]
@@ -33,8 +33,9 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "pytest>=6",
-    "mypy", 
-    "pre-commit"
+    "mypy",
+    "pre-commit",
+    "nox"
 ]
 test = [
     "pytest>=6",

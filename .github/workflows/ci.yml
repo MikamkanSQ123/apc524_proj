@@ -11,7 +11,7 @@ on:
 jobs:
 
   pre-commit:
-  
+
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -23,7 +23,7 @@ jobs:
       - uses: pre-commit/action@v3.0.0
         with:
           extra_args: --hook-stage manual --all-files
-          
+
   build:
 
     runs-on: ubuntu-latest
