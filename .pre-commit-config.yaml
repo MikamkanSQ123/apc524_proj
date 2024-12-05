@@ -24,4 +24,5 @@ repos:
     hooks:
       - id: mypy
         args: [--strict]
-        additional_dependencies: [nox]
+        additional_dependencies: [nox, types-PyYAML]
+        exclude: ^tests/

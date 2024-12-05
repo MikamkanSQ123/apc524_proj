@@ -1,0 +1,44 @@
+large_list:
+    - entry_0: 0
+      entry_1: 1
+      entry_2: 2
+      entry_3: 3
+      entry_4: 4
+    - entry_0: 0
+      entry_1: 1
+      entry_2: 2
+      entry_3: 3
+      entry_4: 4
+    - entry_0: 0
+      entry_1: 1
+      entry_2: 2
+      entry_3: 3
+      entry_4: 4
+level1:
+level2:
+    item1:
+        - 1
+        - 2
+        - 3
+        - 4
+        - 5
+    item2:
+        subitem1: value1
+        subitem2: value2
+    item3:
+        - key1: value1
+          key2: value2
+        - key3: value3
+          key4: value4
+level2b:
+    list1:
+        - 0
+        - 1
+        - 2
+    nested_dict:
+        key_0:
+            nested_key_0: 0
+            nested_key_1: 1
+        key_1:
+            nested_key_0: 0
+            nested_key_1: 1

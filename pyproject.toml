@@ -12,6 +12,7 @@ license = { file = "LICENSE" }
 authors = [
     { name = "Zhuolin Xiang", email = "xiangzhuolin19@gmail.com" },
     { name = "Haoqian Zhang", email = "zhanghq.chn@gmail.com" },
+    { name = "Yuheng Zheng", email = "yz1234@princeton.edu" },
     { name = "Siqing Zou", email = "siqingzou1@gmail.com" },
 ]
 classifiers = [
@@ -27,7 +28,8 @@ classifiers = [
     "Typing :: Typed",
 ]
 dependencies = [
-    "numpy>=1.21.0"
+    "numpy>=1.21.0",
+    "pyyaml"
 ]
 
 [project.optional-dependencies]
@@ -39,6 +41,7 @@ dev = [
 ]
 test = [
     "pytest>=6",
+    "pyyaml"
 ]
 docs = [
     "sphinx",
@@ -67,3 +70,4 @@ strict = true
 show_error_codes = true
 enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
 warn_unreachable = true
+exclude = "^tests/"
