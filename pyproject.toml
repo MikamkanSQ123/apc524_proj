@@ -1,0 +1,68 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "simple_backtester"
+version = "0.1.0"
+description = "A simple, readily extensible backtesting framework for financial time series data."
+readme = "README.md"
+requires-python = ">=3.8"
+license = { file = "LICENSE" }
+authors = [
+    { name = "Zhuolin Xiang", email = "xiangzhuolin19@gmail.com" }, 
+    { name = "Haoqian Zhang", email = "zhanghq.chn@gmail.com" }, 
+    { name = "Siqing Zou", email = "siqingzou1@gmail.com" },
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11", 
+    "Topic :: Finance/Investment",
+    "Typing :: Typed",
+]
+dependencies = [
+    "numpy>=1.21.0"
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=6",
+    "mypy", 
+    "pre-commit"
+]
+test = [
+    "pytest>=6",
+]
+docs = [
+    "sphinx",
+    "sphinx-rtd-theme"
+]
+
+[project.urls]
+"Homepage" = "https://github.com/MikamkanSQ123/apc524_proj"
+"Bug Tracker" = "https://github.com/MikamkanSQ123/apc524_proj/issues"
+
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = ["-ra", "--showlocals", "--strict-markers", "--strict-config"]
+xfail_strict = true
+filterwarnings = ["error"]
+log_cli_level = "INFO"
+testpaths = [
+  "tests",
+]
+
+[tool.mypy]
+python_version = "3.9"
+warn_unused_configs = true
+strict = true
+show_error_codes = true
+enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
+warn_unreachable = true
