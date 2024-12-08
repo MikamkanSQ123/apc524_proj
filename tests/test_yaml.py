@@ -1,14 +1,8 @@
-import pytest
-from pathlib import Path
+import hashlib
 from simple_backtester.utils import yaml_helper
 
 
-@pytest.fixture
-def expected_yaml_file():
-    return Path("tests/test_data/expected_yaml.yaml").read_text().replace(" ", "")
-
-
-def test_yaml_dump(tmp_path, expected_yaml_file):
+def test_yaml_dump(tmp_path):
     file_path = tmp_path / "test.yaml"
     data = {
         "level1": {
@@ -31,4 +25,7 @@ def test_yaml_dump(tmp_path, expected_yaml_file):
         "large_list": [{f"entry_{i}": i for i in range(5)} for _ in range(3)],
     }
     yaml_helper.YamlParser(file_path).save_yaml(data)
-    assert file_path.read_text().replace(" ", "") == expected_yaml_file
+    assert (
+        hashlib.md5(file_path.read_text().replace(" ", "").encode()).hexdigest()
+        == "4225f62ca43faaa0a8476aed0af80698"
+    )
