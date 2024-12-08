@@ -1,0 +1,23 @@
+strategy:
+  name: "MeanReversion"
+  description: "A simple mean-reversion strategy."
+  source: "tests/test_data/strategy/strat1.py"
+  universe: 
+    - "A"
+    - "B"
+    - "C"
+
+setup:
+  warm_up: 100
+  look_back: 200
+  initial_capital: 0
+
+parameters:
+  moving_average_window: 20
+  entry_threshold: 1.5
+  exit_threshold: 0.5
+  default_position_size: 10
+
+risk:
+  stop_loss: 0.02
+  take_profit: 0.05
