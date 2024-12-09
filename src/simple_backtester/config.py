@@ -7,7 +7,7 @@ import numpy as np
 from numpy.typing import NDArray
 
 
-@dataclass
+@dataclass(frozen=True)
 class SetupConfig:
     start_date: str
     end_date: str
@@ -21,7 +21,7 @@ class ParametersConfig:
     pass
 
 
-@dataclass
+@dataclass(frozen=True)
 class RiskConfig:
     stop_loss: float = float("inf")
     cool_down: int = 0
