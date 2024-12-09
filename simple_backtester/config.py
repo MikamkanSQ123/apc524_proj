@@ -30,7 +30,30 @@ class RiskConfig:
 
 class Strategy(ABC):
     """
-    Abstract class for strategies
+    Abstract base class for defining a trading strategy.
+
+    This class provides a framework for implementing trading strategies with
+    configurable setup, parameters, and risk management. It enforces mandatory
+    sections in the configuration file and initializes the strategy accordingly.
+
+    Attributes:
+        setup (SetupConfig): Configuration for the setup section, such as the trading universe.
+        parameters (ParametersConfig): Configuration for strategy parameters.
+        risk (RiskConfig): Configuration for risk management settings like stop loss and take profit.
+        __pnl (list[float]): List tracking profit and loss over time.
+        __running_pnl (float): Cumulative profit and loss.
+        __cool_downcount (int): Remaining cool-down period in evaluations.
+
+    Methods:
+        __init__(config_path: Union[str, Path]):
+            Initializes the strategy using the configuration file at the specified path.
+
+        evaluate() -> NDArray[np.float64]:
+            Abstract method to compute strategy weights. Must be implemented by subclasses.
+
+        eval() -> NDArray[np.float64]:
+            Evaluates the strategy while applying risk management rules, including stop loss,
+            take profit, and cool-down periods.
     """
 
     @final
