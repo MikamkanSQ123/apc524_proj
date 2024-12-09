@@ -1,7 +1,13 @@
 import numpy as np
+from typing import List, Union, Any
+from numpy.typing import NDArray
+from ..data_protocol import Numeric
 
 
-def sharpe_ratio(returns, risk_free_rate):
+def sharpe_ratio(
+    returns: Union[List[Numeric], NDArray[np.floating[Any]]],
+    risk_free_rate: Numeric,
+) -> Numeric:
     """
     Calculate the Sharpe Ratio for a given set of returns and a risk-free rate.
 
@@ -21,18 +27,3 @@ def sharpe_ratio(returns, risk_free_rate):
         return np.nan  # Avoid division by zero
 
     return mean_excess_return / std_dev_excess_return
-
-
-if __name__ == "__main__":
-    returns = [0.1, 0.12, 0.08, 0.09, 0.11]  # Example returns
-    risk_free_rate = 0.02
-
-    calculated_sharpe = sharpe_ratio(returns, risk_free_rate)
-
-    # Example test case (the expected value depends on the sample returns provided)
-    expected_sharpe = (np.mean([0.1, 0.12, 0.08, 0.09, 0.11]) - 0.02) / np.std(
-        [0.1, 0.12, 0.08, 0.09, 0.11]
-    )
-
-    assert abs(calculated_sharpe - expected_sharpe) < 1e-6
-    print("Sharpe Ratio calculated successfully:", calculated_sharpe)
