@@ -26,7 +26,7 @@ class Feature(ABC):
 
     @abstractmethod
     def eval(
-        self, data: Union[NDArray[np.float64], pd.Series[Any], pd.DataFrame]
+        self, data: Union[NDArray[np.float64], "pd.Series[Any]", pd.DataFrame]
     ) -> Any:
         "Some evaluation function"
         self.func = lambda x: np.exp(x)
