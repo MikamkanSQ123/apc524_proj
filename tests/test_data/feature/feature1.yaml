@@ -1,0 +1,19 @@
+feature:
+  name: "Strange"
+  description: "A strange feature using whatever techniques to calculate."
+  source: "tests/test_data/feature/feature1.py"
+
+setup:
+  freqency: "1m"
+
+feature_parameters:
+  moving_average:
+    - 5
+    - 10
+  macd:
+    - [5, 10]
+    - [10, 20]
+  rsi:
+    - 14
+    - 21
+
