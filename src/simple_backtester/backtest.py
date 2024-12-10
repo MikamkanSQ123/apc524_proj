@@ -1,48 +1,55 @@
 import yaml
 import matplotlib.pyplot as plt
 import numpy as np
-from simple_backtester import Strategy
-# Todo: import the strategy class
+import pandas as pd
+from config import Strategy
+from typing import Dict, Any
 
 
 class Backtester:
-    def __init__(self, config):
+    def __init__(self, config: Dict[str, Any]) -> None:
         """Initialize the backtester with the configuration."""
-        self.config = config
-        self.strategy = Strategy(config)
+        self.config: Dict[str, Any] = config
+        self.strategy: Strategy = Strategy(config)
 
-    def load_data(self):
+    def load_data(self) -> pd.DataFrame:
         """Load market data from a CSV file specified in the configuration."""
-        # Todo: load the data
+        file_path: str = self.config["data"]["file_path"]
+        data: pd.DataFrame = pd.read_csv(
+            file_path, parse_dates=["Date"], index_col="Date"
+        )
+        return data
 
-    def calculate_performance_metrics(self, data):
+    def calculate_performance_metrics(self, data: pd.DataFrame) -> Dict[str, float]:
         """Calculate performance metrics like Sharpe ratio and volatility."""
-        strategy_returns = data["Strategy_Return"].dropna()
-        risk_free_rate = self.config["metrics"]["risk_free_rate"]
+        strategy_returns: pd.Series = data["Strategy_Return"].dropna()
+        risk_free_rate: float = self.config["metrics"]["risk_free_rate"]
 
         # Sharpe Ratio
-        excess_returns = strategy_returns - risk_free_rate / 252
-        sharpe_ratio = np.sqrt(252) * excess_returns.mean() / excess_returns.std()
+        excess_returns: pd.Series = strategy_returns - risk_free_rate / 252
+        sharpe_ratio: float = (
+            np.sqrt(252) * excess_returns.mean() / excess_returns.std()
+        )
 
         # Volatility
-        volatility = strategy_returns.std() * np.sqrt(252)
+        volatility: float = strategy_returns.std() * np.sqrt(252)
 
         # Max Drawdown
-        cumulative_returns = (1 + strategy_returns).cumprod()
-        rolling_max = cumulative_returns.cummax()
-        drawdown = cumulative_returns / rolling_max - 1
-        max_drawdown = drawdown.min()
+        cumulative_returns: pd.Series = (1 + strategy_returns).cumprod()
+        rolling_max: pd.Series = cumulative_returns.cummax()
+        drawdown: pd.Series = cumulative_returns / rolling_max - 1
+        max_drawdown: float = drawdown.min()
 
-        metrics = {
+        metrics: Dict[str, float] = {
             "Sharpe Ratio": sharpe_ratio,
             "Volatility": volatility,
             "Max Drawdown": max_drawdown,
         }
         return metrics
 
-    def run(self):
+    def run(self) -> pd.DataFrame:
         """Run the backtest."""
-        data = self.load_data()
+        data: pd.DataFrame = self.load_data()
         data = self.strategy.generate_signals(data)
 
         # Calculate returns
@@ -54,7 +61,7 @@ class Backtester:
         data["Cumulative_Strategy_Return"] = (1 + data["Strategy_Return"]).cumprod()
 
         # Calculate and display performance metrics
-        metrics = self.calculate_performance_metrics(data)
+        metrics: Dict[str, float] = self.calculate_performance_metrics(data)
         print("Performance Metrics:")
         for key, value in metrics.items():
             print(f"{key}: {value:.2f}")
@@ -62,7 +69,7 @@ class Backtester:
         self.plot_results(data)
         return data
 
-    def plot_results(self, data):
+    def plot_results(self, data: pd.DataFrame) -> None:
         """Plot the cumulative returns of the strategy and the market."""
         plt.figure(figsize=(12, 6))
         plt.plot(data["Cumulative_Market_Return"], label="Market Return")
@@ -78,12 +85,12 @@ class Backtester:
 if __name__ == "__main__":
     # Load configuration from YAML
     with open("config.yaml", "r") as file:
-        config = yaml.safe_load(file)
+        config: Dict[str, Any] = yaml.safe_load(file)
 
     # Run the backtest
     backtester = Backtester(config)
-    results = backtester.run()
+    results: pd.DataFrame = backtester.run()
 
     # Optionally save results to a file
-    output_path = config["output"]["file_path"]
+    output_path: str = config["output"]["file_path"]
     results.to_csv(output_path)
