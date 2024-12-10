@@ -1,5 +1,4 @@
 import yaml
-import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 from simple_backtester import Strategy

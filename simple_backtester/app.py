@@ -1,6 +1,5 @@
 from flask import Flask, render_template, request, send_file, jsonify
 import os
-import pandas as pd
 import yaml
 from backtest import Backtester
 import matplotlib.pyplot as plt
