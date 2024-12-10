@@ -15,9 +15,7 @@ class Backtester:
     def load_data(self) -> pd.DataFrame:
         """Load market data from a CSV file specified in the configuration."""
         file_path = self.config["data"]["file_path"]
-        data = pd.read_csv(
-            file_path, parse_dates=["Date"], index_col="Date"
-        )
+        data = pd.read_csv(file_path, parse_dates=["Date"], index_col="Date")
         return data
 
     def calculate_performance_metrics(self, data: pd.DataFrame) -> Dict[str, float]:
@@ -27,9 +25,7 @@ class Backtester:
 
         # Sharpe Ratio
         excess_returns = strategy_returns - risk_free_rate / 252
-        sharpe_ratio = (
-            np.sqrt(252) * excess_returns.mean() / excess_returns.std()
-        )
+        sharpe_ratio = np.sqrt(252) * excess_returns.mean() / excess_returns.std()
 
         # Volatility
         volatility = strategy_returns.std() * np.sqrt(252)

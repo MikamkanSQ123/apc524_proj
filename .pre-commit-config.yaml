@@ -32,3 +32,5 @@ repos:
         - pandas-stubs  # Type stubs for pandas
         - numpy  # Type stubs for numpy
         exclude: ^tests/
+        env:
+          PYTHONPATH: "src/simple_backtester/"
