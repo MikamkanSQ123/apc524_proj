@@ -32,3 +32,34 @@ class Feature(ABC):
         self.func = lambda x: np.exp(x)
         self.feature: Any = self.func(data)  # type: ignore[no-untyped-call]
         return self.feature
+
+
+class Techlib(object):
+    "Class for technical indicators"
+
+    def __init__(self) -> None:
+        pass
+
+    @staticmethod
+    def ma(
+        data: Union["pd.Series[Any]", pd.DataFrame], window: int
+    ) -> Union["pd.Series[Any]", pd.DataFrame]:
+        return data.rolling(window=window).mean()
+
+    @staticmethod
+    def macd(
+        data: Union["pd.Series[Any]", pd.DataFrame], window1: int, window2: int
+    ) -> Union["pd.Series[Any]", pd.DataFrame]:
+        wd1, wd2 = min(window1, window2), max(window1, window2)
+        return Techlib.ma(data, wd1) - Techlib.ma(data, wd2)
+
+    @staticmethod
+    def rsi(
+        data: Union["pd.Series[Any]", pd.DataFrame], window: int = 14
+    ) -> Union["pd.Series[Any]", pd.DataFrame]:
+        "Input should be price data"
+        delta = data.diff()
+        gain = (delta.where(delta > 0, 0)).rolling(window=window).mean()  # type: ignore[arg-type, operator]
+        loss = (-delta.where(delta < 0, 0)).rolling(window=window).mean()  # type: ignore[arg-type, operator]
+        rs = gain / loss
+        return 100 - (100 / (1 + rs))
