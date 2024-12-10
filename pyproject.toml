@@ -3,7 +3,7 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "simple_backtester"
+name = "Backtester"
 version = "0.1.0"
 description = "A simple, readily extensible backtesting framework for financial time series data."
 readme = "README.md"
@@ -48,6 +48,11 @@ docs = [
     "sphinx",
     "sphinx-rtd-theme"
 ]
+
+[tool.setuptools]
+packages = ["simple_backtester"]
+package-dir = {"" = "src"}
+
 
 [project.urls]
 "Homepage" = "https://github.com/MikamkanSQ123/apc524_proj"

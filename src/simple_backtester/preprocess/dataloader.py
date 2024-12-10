@@ -1,9 +1,9 @@
 import pandas as pd
-from typing import Any
+from typing import Any, Union
 
 config = {
-    "data_path": "simple_backtester/data/feature/return.csv",
-    "tech_indicators": ["moving_average"],
+    "data_path": "./src/simple_backtester/data/feature/price.csv",
+    "tech_indicators": ["ma", "macd", "rsi", "return"],
     "features": ["return"],
 }
 
@@ -21,22 +21,26 @@ class DataLoader:
         symbols: list[str],
         features: list[str],
         args: dict[str, Any],
-    ) -> dict[str, pd.DataFrame]:
+    ) -> dict[str, Union[None, pd.DataFrame]]:
         features_dict: dict[str, Any] = {}
         for feature in features:
             features_dict[feature] = None
             if feature in self.config["features"]:
                 features_dict[feature] = self.data[symbols][start:end]  # type: ignore[misc]
             elif feature in self.config["tech_indicators"]:
-                features_dict[feature] = eval(
-                    f"self.{feature}(start, end, symbols, args.get(feature, None))"
+                farg = args.get(feature, [])
+                if not isinstance(farg, list):
+                    farg = [farg]
+                name = (
+                    f"{feature}_{"_".join([str(arg) for arg in farg])}"
+                    if farg
+                    else feature
+                )
+                print(f"Calculating {name}")
+                features_dict[name] = eval(
+                    f"Techlib.{feature}(self.data[symbols], *farg)"
                 )
         return features_dict
-
-    def moving_average(
-        self, start: str, end: str, symbols: list[str], arg: int
-    ) -> pd.DataFrame:
-        return self.data[symbols].rolling(window=arg).mean()[start:end]  # type: ignore[misc]
 
 
 if __name__ == "__main__":
@@ -44,7 +48,7 @@ if __name__ == "__main__":
     features = dl.load_data(
         "2024-11-11 00:00:00",
         "2024-11-11 23:54:00",
-        ["BTC"],
-        ["moving_average", "return"],
-        {"moving_average": 10},
+        ["BTC", "ZRX"],
+        ["ma", "rsi", "macd"],
+        {"ma": 10, "macd": [12, 26]},
     )
