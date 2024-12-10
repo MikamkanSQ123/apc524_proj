@@ -27,7 +27,6 @@ repos:
         additional_dependencies:
         - types-Flask  # Type stubs for Flask
         - types-PyYAML  # Type stubs for PyYAML
-        - types-matplotlib  # Type stubs for Matplotlib
         - pandas-stubs  # Type stubs for pandas
         - numpy-stubs  # Type stubs for numpy
         exclude: ^tests/
