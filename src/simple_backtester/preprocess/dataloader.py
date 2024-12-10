@@ -1,11 +1,13 @@
 import pandas as pd
 from typing import Any, Union
 from .techlib import Techlib
+from pathlib import Path
 
+path = "./src/simple_backtester/data/feature/"
 config = {
-    "data_path": "./src/simple_backtester/data/feature/price.csv",
-    "tech_indicators": ["ma", "macd", "rsi", "return"],
-    "features": ["return"],
+    "data_path": path,
+    "tech_indicators": ["ma", "macd", "rsi"],
+    "features": [file.name[:-4] for file in Path(path).iterdir() if file.is_file()],
 }
 
 
@@ -13,7 +15,22 @@ class DataLoader:
     def __init__(self, config: dict[str, Any] = config):
         self.config = config
         print(f'Loading data from {config["data_path"]}')
-        self.data = pd.read_csv(config["data_path"], index_col=0, parse_dates=True)
+        print(f'Possible target features: {config["features"]}')
+        self.data: dict[str, Any] = {}
+
+    @staticmethod
+    def read(file: Union[str, Path]) -> pd.DataFrame:
+        if isinstance(file, str):
+            file = Path(file)
+        return pd.read_csv(file, index_col=0, parse_dates=True)
+
+    def load_from_file(self, name: str) -> Any:
+        if name not in self.config["features"]:
+            raise ValueError(f"Feature {name} not found in {self.config['data_path']}")
+        if name not in self.data:
+            path = self.config["data_path"] + name + ".csv"
+            self.data[name] = DataLoader.read(path)
+        return self.data[name]
 
     def load_data(
         self,
@@ -22,24 +39,31 @@ class DataLoader:
         symbols: list[str],
         features: list[str],
         args: dict[str, Any],
+        base: str = "price",
     ) -> dict[str, Union[None, pd.DataFrame]]:
+        assert base in self.config["features"]
+        self.load_from_file(base)
+
         features_dict: dict[str, Any] = {}
         for feature in features:
             features_dict[feature] = None
+            # load data from local files if it already exists in path
             if feature in self.config["features"]:
-                features_dict[feature] = self.data[symbols][start:end]  # type: ignore[misc]
+                self.load_from_file(feature)
+                features_dict[feature] = self.data[feature][symbols][start:end]  # type: ignore[misc]
+            # calculate technical indicators
             elif feature in self.config["tech_indicators"]:
                 farg = args.get(feature, [])
                 if not isinstance(farg, list):
                     farg = [farg]
                 name = (
-                    f"{feature}_{"_".join([str(arg) for arg in farg])}"
+                    f"{base}_{feature}_{"_".join([str(arg) for arg in farg])}"
                     if farg
                     else feature
                 )
                 print(f"Calculating {name}")
                 features_dict[name] = eval(
-                    f"Techlib.{feature}(self.data[symbols], *farg)"
+                    f"Techlib.{feature}(self.data[base][symbols], *farg)"
                 ).loc[start:end]  # type: ignore[misc]
         return features_dict
 
@@ -55,4 +79,5 @@ if __name__ == "__main__":
         ["BTC", "ZRX"],
         ["ma", "rsi", "macd"],
         {"ma": 10, "macd": [12, 26]},
+        base="price",
     )
