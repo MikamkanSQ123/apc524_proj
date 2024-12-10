@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Backtest Strategy Platform</title>
+</head>
+<body>
+    <h1>Backtest Strategy Platform</h1>
+    <form id="uploadForm" method="post" action="/upload" enctype="multipart/form-data">
+        <label for="config_file">Upload Configuration File (YAML):</label><br>
+        <input type="file" id="config_file" name="config_file" accept=".yaml"><br><br>
+
+        <label for="data_file">Upload Market Data File (CSV):</label><br>
+        <input type="file" id="data_file" name="data_file" accept=".csv"><br><br>
+
+        <button type="submit">Run Backtest</button>
+    </form>
+
+    <h2>Results</h2>
+    <div id="results">
+        <p>No results yet.</p>
+    </div>
+
+    <script>
+        document.getElementById('uploadForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+
+            const response = await fetch('/upload', {
+                method: 'POST',
+                body: formData
+            });
+
+            const resultsDiv = document.getElementById('results');
+            if (response.ok) {
+                const data = await response.json();
+                resultsDiv.innerHTML = `
+                    <p><strong>Sharpe Ratio:</strong> ${data.metrics['Sharpe Ratio'].toFixed(2)}</p>
+                    <p><strong>Volatility:</strong> ${data.metrics['Volatility'].toFixed(2)}</p>
+                    <p><strong>Max Drawdown:</strong> ${data.metrics['Max Drawdown'].toFixed(2)}</p>
+                    <a href="/download/results.csv">Download Results</a><br><br>
+                    <img src="/plot/${data.plot_file}" alt="Backtest Plot" style="max-width: 100%; height: auto;">
+                `;
+            } else {
+                const error = await response.json();
+                resultsDiv.innerHTML = `<p>Error: ${error.error}</p>`;
+            }
+        });
+    </script>
+</body>
+</html>
