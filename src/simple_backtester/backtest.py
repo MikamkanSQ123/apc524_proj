@@ -2,7 +2,8 @@ import yaml
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-#from .config import Strategy
+
+# from .config import Strategy
 from typing import Dict, Any
 
 
@@ -10,7 +11,7 @@ class Backtester:
     def __init__(self, config: Dict[str, Any]) -> None:
         """Initialize the backtester with the configuration."""
         self.config = config
-        #self.strategy = Strategy(config)
+        # self.strategy = Strategy(config)
 
     def load_data(self) -> pd.DataFrame:
         """Load market data from a CSV file specified in the configuration."""
@@ -46,7 +47,7 @@ class Backtester:
     def run(self) -> pd.DataFrame:
         """Run the backtest."""
         data = self.load_data()
-        #data = self.strategy.generate_signals(data)
+        # data = self.strategy.generate_signals(data)
 
         # Calculate returns
         data["Daily_Return"] = data["Close"].pct_change()
