@@ -39,7 +39,7 @@ class DataLoader:
                 print(f"Calculating {name}")
                 features_dict[name] = eval(
                     f"Techlib.{feature}(self.data[symbols], *farg)"
-                )
+                ).loc[start:end] # type: ignore[misc]
         return features_dict
 
 
