@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, send_file, jsonify, make_resp
 from flask.wrappers import Response
 import os
 import yaml
-from backtest import Backtester
+from .backtest import Backtester
 import matplotlib.pyplot as plt
 from typing import Any, Dict
 
