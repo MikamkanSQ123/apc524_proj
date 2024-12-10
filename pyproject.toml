@@ -49,12 +49,6 @@ docs = [
     "sphinx-rtd-theme"
 ]
 
-[tool.setuptools]
-# packages = ["simple_backtester", "simple_backtester.preprocess", "simple_backtester.strategy"]
-# package-dir = {"" = "src"}
-
-# [tool.setuptools.packages.find]
-# where = ["src"]
 
 [project.urls]
 "Homepage" = "https://github.com/MikamkanSQ123/apc524_proj"

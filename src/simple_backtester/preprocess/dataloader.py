@@ -1,5 +1,6 @@
 import pandas as pd
 from typing import Any, Union
+from .techlib import Techlib
 
 config = {
     "data_path": "./src/simple_backtester/data/feature/price.csv",
