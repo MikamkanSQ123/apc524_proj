@@ -4,6 +4,7 @@ import numpy as np
 from simple_backtester import Strategy
 # Todo: import the strategy class
 
+
 class Backtester:
     def __init__(self, config):
         """Initialize the backtester with the configuration."""
@@ -16,8 +17,8 @@ class Backtester:
 
     def calculate_performance_metrics(self, data):
         """Calculate performance metrics like Sharpe ratio and volatility."""
-        strategy_returns = data['Strategy_Return'].dropna()
-        risk_free_rate = self.config['metrics']['risk_free_rate']
+        strategy_returns = data["Strategy_Return"].dropna()
+        risk_free_rate = self.config["metrics"]["risk_free_rate"]
 
         # Sharpe Ratio
         excess_returns = strategy_returns - risk_free_rate / 252
@@ -33,9 +34,9 @@ class Backtester:
         max_drawdown = drawdown.min()
 
         metrics = {
-            'Sharpe Ratio': sharpe_ratio,
-            'Volatility': volatility,
-            'Max Drawdown': max_drawdown
+            "Sharpe Ratio": sharpe_ratio,
+            "Volatility": volatility,
+            "Max Drawdown": max_drawdown,
         }
         return metrics
 
@@ -45,12 +46,12 @@ class Backtester:
         data = self.strategy.generate_signals(data)
 
         # Calculate returns
-        data['Daily_Return'] = data['Close'].pct_change()
-        data['Strategy_Return'] = data['Signal'].shift(1) * data['Daily_Return']
+        data["Daily_Return"] = data["Close"].pct_change()
+        data["Strategy_Return"] = data["Signal"].shift(1) * data["Daily_Return"]
 
         # Calculate cumulative returns
-        data['Cumulative_Market_Return'] = (1 + data['Daily_Return']).cumprod()
-        data['Cumulative_Strategy_Return'] = (1 + data['Strategy_Return']).cumprod()
+        data["Cumulative_Market_Return"] = (1 + data["Daily_Return"]).cumprod()
+        data["Cumulative_Strategy_Return"] = (1 + data["Strategy_Return"]).cumprod()
 
         # Calculate and display performance metrics
         metrics = self.calculate_performance_metrics(data)
@@ -64,18 +65,19 @@ class Backtester:
     def plot_results(self, data):
         """Plot the cumulative returns of the strategy and the market."""
         plt.figure(figsize=(12, 6))
-        plt.plot(data['Cumulative_Market_Return'], label='Market Return')
-        plt.plot(data['Cumulative_Strategy_Return'], label='Strategy Return')
+        plt.plot(data["Cumulative_Market_Return"], label="Market Return")
+        plt.plot(data["Cumulative_Strategy_Return"], label="Strategy Return")
         plt.legend()
-        plt.title('Backtest Results')
-        plt.xlabel('Date')
-        plt.ylabel('Cumulative Return')
+        plt.title("Backtest Results")
+        plt.xlabel("Date")
+        plt.ylabel("Cumulative Return")
         plt.grid()
         plt.show()
 
+
 if __name__ == "__main__":
     # Load configuration from YAML
-    with open('config.yaml', 'r') as file:
+    with open("config.yaml", "r") as file:
         config = yaml.safe_load(file)
 
     # Run the backtest
@@ -83,5 +85,5 @@ if __name__ == "__main__":
     results = backtester.run()
 
     # Optionally save results to a file
-    output_path = config['output']['file_path']
+    output_path = config["output"]["file_path"]
     results.to_csv(output_path)
