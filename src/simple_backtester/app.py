@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, send_file, jsonify
+from flask import Flask, render_template, request, send_file, jsonify, make_response
 from flask.wrappers import Response
 import os
 import yaml
@@ -19,9 +19,10 @@ def index() -> str:
 @app.route("/upload", methods=["POST"])
 def upload_files() -> Response:
     if "config_file" not in request.files or "data_file" not in request.files:
-        return jsonify(
-            {"error": "Both configuration and data files are required."}
-        ), 400
+        return make_response(
+            jsonify({"error": "Both configuration and data files are required."}),
+            400,
+        )
 
     config_file = request.files["config_file"]
     data_file = request.files["data_file"]
@@ -55,12 +56,15 @@ def upload_files() -> Response:
     plot_path: str = os.path.join(app.config["UPLOAD_FOLDER"], "backtest_plot.png")
     plot_results(results, plot_path)
 
-    return jsonify(
-        {
-            "metrics": metrics,
-            "results_file": "results.csv",
-            "plot_file": "backtest_plot.png",
-        }
+    return make_response(
+        jsonify(
+            {
+                "metrics": metrics,
+                "results_file": "results.csv",
+                "plot_file": "backtest_plot.png",
+            }
+        ),
+        200,
     )
 
 
@@ -69,7 +73,7 @@ def download_file(filename: str) -> Response:
     file_path: str = os.path.join(app.config["UPLOAD_FOLDER"], filename)
     if os.path.exists(file_path):
         return send_file(file_path, as_attachment=True)
-    return jsonify({"error": "File not found."}), 404
+    return make_response(jsonify({"error": "File not found."}), 404)
 
 
 @app.route("/plot/<filename>")
@@ -77,7 +81,7 @@ def serve_plot(filename: str) -> Response:
     file_path: str = os.path.join(app.config["UPLOAD_FOLDER"], filename)
     if os.path.exists(file_path):
         return send_file(file_path, mimetype="image/png")
-    return jsonify({"error": "File not found."}), 404
+    return make_response(jsonify({"error": "File not found."}), 404)
 
 
 def plot_results(data: Any, plot_path: str) -> None:
