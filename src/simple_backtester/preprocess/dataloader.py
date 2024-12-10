@@ -43,6 +43,9 @@ class DataLoader:
                 ).loc[start:end]  # type: ignore[misc]
         return features_dict
 
+    def _test(self) -> Union[pd.DataFrame, "pd.Series[Any]"]:
+        return Techlib.ma(self.data["BTC"], 10)
+
 
 if __name__ == "__main__":
     dl = DataLoader()
