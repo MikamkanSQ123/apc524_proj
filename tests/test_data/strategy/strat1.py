@@ -4,7 +4,7 @@ import numpy as np
 
 class MeanReversion(Strategy):
     def evaluate(self):
-        data = self.features.data
+        data = self.features.close
         data = (data - np.mean(data, axis=0)) / np.std(data, axis=0)
         ma_base = np.mean(data[-self.parameters.ma_base :], axis=0)
         ma_window = np.vstack(
