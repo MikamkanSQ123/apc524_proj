@@ -15,6 +15,7 @@ class SetupConfig:
     look_back: int
     initial_capital: float
     universe: List[str]
+    features: List[str]
 
 
 class ParametersConfig:
@@ -79,11 +80,11 @@ class Strategy(ABC):
         self.__cool_downcount = 0
 
     @abstractmethod
-    def evaluate(self) -> NDArray[np.float64]:
+    def evaluate(self, data: NDArray[np.float64]) -> NDArray[np.float64]:
         pass
 
     @final
-    def eval(self) -> NDArray[np.float64]:
+    def eval(self, data: NDArray[np.float64]) -> NDArray[np.float64]:
         # Check if we are in cool down period
         if self.__cool_downcount > 0:
             self.__cool_downcount -= 1
@@ -101,7 +102,7 @@ class Strategy(ABC):
             return np.zeros_like(self.setup.universe)
 
         # Compute weights as user defined
-        return self.evaluate()
+        return self.evaluate(data)
 
     @property
     def setup(self) -> SetupConfig:
