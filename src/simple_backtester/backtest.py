@@ -19,7 +19,16 @@ class Backtester:
             strategy_module_path (str): Path to the strategy module file.
             config_path (Union[str, Path]): Path to the configuration file.
         """
+        # Dynamically load the strategy class
         self.strategy_class = self.load_strategy_class(strategy_module_path, Strategy)
+
+        # Ensure the loaded class is a concrete subclass of Strategy
+        if inspect.isabstract(self.strategy_class):
+            raise ValueError(
+                f"The loaded strategy class must not be abstract: {self.strategy_class}."
+            )
+
+        # Instantiate the strategy
         self.strategy = self.strategy_class(config_path)
 
         self.start = self.strategy.setup.start_date
@@ -29,7 +38,7 @@ class Backtester:
         self.features = self.strategy.setup.features
 
     @staticmethod
-    def load_strategy_class(module_path: str, base_class: Type) -> Type:
+    def load_strategy_class(module_path: str, base_class: Type) -> Type[Strategy]:
         """
         Dynamically load a strategy class from a given module.
 
@@ -44,7 +53,11 @@ class Backtester:
             ValueError: If no valid strategy class is found or multiple classes are ambiguous.
         """
         spec = importlib.util.spec_from_file_location("strategy_module", module_path)
+        if spec is None:
+            raise ValueError(f"Cannot load module spec from path: {module_path}")
         module = importlib.util.module_from_spec(spec)
+        if spec.loader is None:
+            raise ValueError(f"Module spec has no loader for path: {module_path}")
         spec.loader.exec_module(module)
 
         # Find all classes in the module that subclass the specified base class
@@ -61,7 +74,13 @@ class Backtester:
                 f"Multiple strategy classes found in {module_path}. Please specify one."
             )
 
-        return strategy_classes[0]
+        cls = strategy_classes[0]
+        if inspect.isabstract(cls):
+            raise ValueError(
+                f"The class {cls.__name__} is abstract and cannot be instantiated."
+            )
+
+        return cls
 
     def get_time_n_minutes_before(self, start_time: str, n: int) -> str:
         """
