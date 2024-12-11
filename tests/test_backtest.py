@@ -1,6 +1,6 @@
 from pytest import approx
 from pathlib import Path
-from simple_backtester import Backtester
+from simple_backtester.backtest import Backtester
 
 def test_backtest_evaluate():
     # Load the YAML configuration and the new strategy
