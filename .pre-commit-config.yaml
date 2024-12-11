@@ -30,4 +30,5 @@ repos:
         - types-PyYAML  # Type stubs for PyYAML
         - pandas-stubs  # Type stubs for pandas
         - numpy  # Type stubs for numpy
+        - pandas_market_calendars
         exclude: ^tests/
