@@ -47,5 +47,6 @@ def test_strategy_evaluate():
     MeanReversion = module.MeanReversion
     tstrat = MeanReversion("tests/test_data/strategy/strat1.yaml")
     data = np.arange(0, 300).reshape(100, 3).cumsum(axis=0)
-    weights = tstrat.evaluate(data)
+    tstrat.features.data = data
+    weights = tstrat.evaluate()
     assert weights == approx(np.array([-1.22694033, 0.00440279, 1.22253754]))
