@@ -98,9 +98,9 @@ class Backtester:
         self.sharpe_ratio: float = (
             (np.mean(self.pnl_history) / self.volatility) if self.volatility != 0 else 0
         )
-        drawdown: float = np.maximum.accumulate(np.cumsum(self.pnl_history)) - np.cumsum(
-            self.pnl_history
-        )
+        drawdown: float = np.maximum.accumulate(
+            np.cumsum(self.pnl_history)
+        ) - np.cumsum(self.pnl_history)
         self.max_drawdown: float = np.max(drawdown)
 
         print("Backtest complete.")
