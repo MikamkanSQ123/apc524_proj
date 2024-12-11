@@ -1,23 +1,67 @@
 from pathlib import Path
+import importlib.util
+import inspect
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from .config import Strategy
 from .preprocess.dataloader import DataLoader
-from typing import Any, Union, Optional
+from typing import Any, Union, Optional, Type
 from datetime import datetime, timedelta
-from tests.test_data.strategy.strat1 import MeanReversion
 
 
 class Backtester:
-    def __init__(self, strategy_class: type[Strategy], config_path: Union[str, Path]):
-        self.strategy = strategy_class(config_path)
+    def __init__(self, strategy_module_path: str, config_path: Union[str, Path]):
+        """
+        Initialize the backtester.
+
+        Args:
+            strategy_module_path (str): Path to the strategy module file.
+            config_path (Union[str, Path]): Path to the configuration file.
+        """
+        self.strategy_class = self.load_strategy_class(strategy_module_path, Strategy)
+        self.strategy = self.strategy_class(config_path)
 
         self.start = self.strategy.setup.start_date
         self.end = self.strategy.setup.end_date
         self.lookback = self.strategy.setup.look_back
         self.symbols = self.strategy.setup.universe
         self.features = self.strategy.setup.features
+
+    @staticmethod
+    def load_strategy_class(module_path: str, base_class: Type) -> Type:
+        """
+        Dynamically load a strategy class from a given module.
+
+        Args:
+            module_path (str): Path to the Python module file.
+            base_class (Type): The base class to filter valid strategy classes.
+
+        Returns:
+            Type: The dynamically loaded strategy class.
+
+        Raises:
+            ValueError: If no valid strategy class is found or multiple classes are ambiguous.
+        """
+        spec = importlib.util.spec_from_file_location("strategy_module", module_path)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+
+        # Find all classes in the module that subclass the specified base class
+        strategy_classes = [
+            cls
+            for _, cls in inspect.getmembers(module, inspect.isclass)
+            if issubclass(cls, base_class) and cls is not base_class
+        ]
+
+        if not strategy_classes:
+            raise ValueError(f"No valid strategy class found in {module_path}.")
+        if len(strategy_classes) > 1:
+            raise ValueError(
+                f"Multiple strategy classes found in {module_path}. Please specify one."
+            )
+
+        return strategy_classes[0]
 
     def get_time_n_minutes_before(self, start_time: str, n: int) -> str:
         """
@@ -141,14 +185,13 @@ class Backtester:
 
 
 if __name__ == "__main__":
-    # Load the YAML configuration
+    # Load the YAML configuration and the new strategy
+    strategy_module_path = "tests/test_data/strategy/strat1.py"
     config_path = "tests/test_data/strategy/strat1.yaml"
     # config = yaml.safe_load(Path(config_path).read_text())
 
-    # Simulated price data (replace with actual market data)
-    # Rows are time periods, columns are securities in the universe
-    # Initialize and run the backtest
-    backtest = Backtester(MeanReversion, config_path)
+    # Dynamically load the strategy class
+    backtest = Backtester(strategy_module_path, config_path)
     path = "./src/simple_backtester/data/feature/"
     config = {
         "data_path": path,
