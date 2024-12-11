@@ -45,12 +45,20 @@ class Backtester:
         data = dl.load_data(
             start=start, end=self.end, symbols=self.symbols, features=self.features
         )
+        if data is None:
+            raise ValueError(
+                "Failed to load data. Ensure the DataLoader is configured correctly."
+            )
         close = dl.load_data(
             start=self.get_time_n_minutes_before(self.start, 1),
             end=self.end,
             symbols=self.symbols,
             features=["close"],
         )
+        if close is None:
+            raise ValueError(
+                "Failed to load close data. Ensure the DataLoader is configured correctly."
+            )
         close_to_close = close["close"].diff(1).dropna().reset_index()
         universe_size = len(self.strategy.setup.universe)
         pnl_history = []
@@ -61,6 +69,11 @@ class Backtester:
         for i in range(len(list(data.values())[0]) - self.lookback):
             # Simulate strategy evaluation and trading
             for feature_name in self.features:
+                if feature_name not in data:
+                    raise ValueError(
+                        f"Feature {feature_name} is missing in the loaded data."
+                    )
+
                 # Dynamically set each feature as an attribute of `self.strategy.features`
                 setattr(
                     self.strategy.features,
@@ -92,7 +105,7 @@ class Backtester:
 
         print("Backtest complete.")
 
-    def get_results(self) -> dict:
+    def get_results(self) -> dict[str, Any]:
         """
         Return the PnL history and any other relevant metrics.
 
