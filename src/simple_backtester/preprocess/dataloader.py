@@ -1,5 +1,6 @@
 import pandas as pd
 from typing import Any, Union
+from .techlib import Techlib
 
 config = {
     "data_path": "./src/simple_backtester/data/feature/price.csv",
@@ -39,8 +40,11 @@ class DataLoader:
                 print(f"Calculating {name}")
                 features_dict[name] = eval(
                     f"Techlib.{feature}(self.data[symbols], *farg)"
-                )
+                ).loc[start:end]  # type: ignore[misc]
         return features_dict
+
+    def _test(self) -> Union[pd.DataFrame, "pd.Series[Any]"]:
+        return Techlib.ma(self.data["BTC"], 10)
 
 
 if __name__ == "__main__":

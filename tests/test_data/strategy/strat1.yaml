@@ -4,6 +4,8 @@ strategy:
   source: "tests/test_data/strategy/strat1.py"
 
 setup:
+  start_date: "2024-01-01"
+  end_date: "2024-12-31"
   universe:
       - "A"
       - "B"
