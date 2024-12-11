@@ -1,6 +1,6 @@
 import pandas as pd
 from typing import Union, Any
-import pandas_market_calendars as mcal
+import pandas_market_calendars as mcal  # type: ignore[import-untyped]
 
 
 class Utils(object):
@@ -22,9 +22,7 @@ class Utils(object):
         return len(Utils.get_trading_days(start, end, exchange))
 
     @staticmethod
-    def get_trading_days_list(
-        start: str, end: str, exchange: str = "NYSE"
-    ) -> list[str]:
+    def get_trading_days_list(start: str, end: str, exchange: str = "NYSE") -> Any:
         return (
             Utils.get_trading_days(start, end, exchange).strftime("%Y-%m-%d").tolist()
         )
