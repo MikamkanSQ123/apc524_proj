@@ -20,7 +20,7 @@ class Backtester:
             config_path (Union[str, Path]): Path to the configuration file.
         """
         # Dynamically load the strategy class
-        self.strategy_class = self.load_strategy_class(strategy_module_path, Strategy)
+        self.strategy_class = self.load_strategy_class(strategy_module_path)
 
         # Ensure the loaded class is a concrete subclass of Strategy
         if inspect.isabstract(self.strategy_class):
@@ -38,7 +38,7 @@ class Backtester:
         self.features = self.strategy.setup.features
 
     @staticmethod
-    def load_strategy_class(module_path: str, base_class: type) -> Type[Strategy]:
+    def load_strategy_class(module_path: str) -> Type[Strategy]:
         """
         Dynamically load a strategy class from a given module.
 
