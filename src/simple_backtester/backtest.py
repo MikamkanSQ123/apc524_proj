@@ -84,7 +84,7 @@ class Backtester:
                 )
 
             curr_weights = self.strategy.eval()
-            period_pnl = np.sum(
+            period_pnl: float = np.sum(
                 (curr_weights - init_weights) * close_to_close.iloc[i][self.symbols]
             )
             init_weights = curr_weights
@@ -93,15 +93,15 @@ class Backtester:
         self.pnl_history = np.array(pnl_history)
 
         # Calculate additional metrics
-        self.cumulative_pnl = np.sum(self.pnl_history)
-        self.volatility = np.std(self.pnl_history)
-        self.sharpe_ratio = (
+        self.cumulative_pnl: float = np.sum(self.pnl_history)
+        self.volatility: float = np.std(self.pnl_history)
+        self.sharpe_ratio: float = (
             (np.mean(self.pnl_history) / self.volatility) if self.volatility != 0 else 0
         )
-        drawdown = np.maximum.accumulate(np.cumsum(self.pnl_history)) - np.cumsum(
+        drawdown: float = np.maximum.accumulate(np.cumsum(self.pnl_history)) - np.cumsum(
             self.pnl_history
         )
-        self.max_drawdown = np.max(drawdown)
+        self.max_drawdown: float = np.max(drawdown)
 
         print("Backtest complete.")
 
