@@ -1,9 +1,10 @@
 from pathlib import Path
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 from .config import Strategy
 from .preprocess.dataloader import DataLoader
-from typing import Any, Union
+from typing import Any, Union, Optional
 from datetime import datetime, timedelta
 from tests.test_data.strategy.strat1 import MeanReversion
 
@@ -42,23 +43,27 @@ class Backtester:
         """
         start = self.get_time_n_minutes_before(self.start, self.lookback)
         dl = DataLoader(config)
-        data = dl.load_data(
+        data: dict[str, Optional[pd.DataFrame]] = dl.load_data(
             start=start, end=self.end, symbols=self.symbols, features=self.features
         )
-        if data is None:
-            raise ValueError(
-                "Failed to load data. Ensure the DataLoader is configured correctly."
-            )
+
+        if not data:
+            raise ValueError("Loaded data is None or empty.")
+
+        first_data = list(data.values())[0]
+        if first_data is None:
+            raise ValueError("First item in loaded data is None.")
+
         close = dl.load_data(
             start=self.get_time_n_minutes_before(self.start, 1),
             end=self.end,
             symbols=self.symbols,
             features=["close"],
         )
-        if close is None:
-            raise ValueError(
-                "Failed to load close data. Ensure the DataLoader is configured correctly."
-            )
+
+        assert close is not None
+        assert close["close"] is not None
+
         close_to_close = close["close"].diff(1).dropna().reset_index()
         universe_size = len(self.strategy.setup.universe)
         pnl_history = []
@@ -66,10 +71,11 @@ class Backtester:
         # Initialize with zeros for PnL tracking
         init_weights = np.zeros(universe_size)
 
-        for i in range(len(list(data.values())[0]) - self.lookback):
+        for i in range(len(first_data) - self.lookback):
             # Simulate strategy evaluation and trading
             for feature_name in self.features:
-                if feature_name not in data:
+                feature_data = data.get(feature_name)
+                if feature_data is None:
                     raise ValueError(
                         f"Feature {feature_name} is missing in the loaded data."
                     )
@@ -78,9 +84,7 @@ class Backtester:
                 setattr(
                     self.strategy.features,
                     feature_name,
-                    data[feature_name]
-                    .iloc[i : (i + self.lookback)][self.symbols]
-                    .to_numpy(),
+                    feature_data.iloc[i : (i + self.lookback)][self.symbols].to_numpy(),
                 )
 
             curr_weights = self.strategy.eval()
