@@ -94,8 +94,8 @@ class Backtester:
 
         # Calculate additional metrics
         self.cumulative_pnl: float = np.sum(self.pnl_history)
-        self.volatility: float = np.std(self.pnl_history)
-        self.sharpe_ratio: float = (
+        self.volatility = np.std(self.pnl_history)
+        self.sharpe_ratio = (
             (np.mean(self.pnl_history) / self.volatility) if self.volatility != 0 else 0
         )
         drawdown: float = np.maximum.accumulate(
