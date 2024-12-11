@@ -38,16 +38,16 @@ class Backtester:
         self.features = self.strategy.setup.features
 
     @staticmethod
-    def load_strategy_class(module_path: str, base_class: Type) -> Type[Strategy]:
+    def load_strategy_class(module_path: str, base_class: type) -> Type[Strategy]:
         """
         Dynamically load a strategy class from a given module.
 
         Args:
             module_path (str): Path to the Python module file.
-            base_class (Type): The base class to filter valid strategy classes.
+            base_class (type): The abstract base class (Strategy).
 
         Returns:
-            Type: The dynamically loaded strategy class.
+            Type[Strategy]: The dynamically loaded concrete subclass of Strategy.
 
         Raises:
             ValueError: If no valid strategy class is found or multiple classes are ambiguous.
@@ -64,7 +64,7 @@ class Backtester:
         strategy_classes = [
             cls
             for _, cls in inspect.getmembers(module, inspect.isclass)
-            if issubclass(cls, base_class) and cls is not base_class
+            if issubclass(cls, Strategy) and cls is not Strategy
         ]
 
         if not strategy_classes:
@@ -80,6 +80,7 @@ class Backtester:
                 f"The class {cls.__name__} is abstract and cannot be instantiated."
             )
 
+        # Explicitly cast to Type[Strategy] to satisfy the type checker
         return cls
 
     def get_time_n_minutes_before(self, start_time: str, n: int) -> str:
