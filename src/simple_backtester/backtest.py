@@ -1,93 +1,124 @@
 import yaml
-import matplotlib.pyplot as plt
+from pathlib import Path
 import numpy as np
-import pandas as pd
+import matplotlib.pyplot as plt
+from .config import Strategy
+from .preprocess import Dataloader
+from typing import Any, Union
+from datetime import datetime, timedelta
+from tests.test_data.strategy.strat1 import MeanReversion
 
-# from .config import Strategy
-from typing import Dict, Any
+class Backtest:
+    def __init__(self, strategy_class: type[Strategy], config_path: Union[str, Path]):
+        self.strategy = strategy_class(config_path)
 
+        self.start = self.strategy.setup.start_date
+        self.end = self.strategy.setup.end_date
+        self.lookback = self.strategy.setup.look_back
+        self.symbols = self.strategy.setup.universe
+        self.features = self.strategy.setup.features
 
-class Backtester:
-    def __init__(self, config: Dict[str, Any]) -> None:
-        """Initialize the backtester with the configuration."""
-        self.config = config
-        # self.strategy = Strategy(config)
+    def get_time_n_minutes_before(self, start_time: str, n: int) -> str:
+        """
+        Calculate the datetime n minutes before a given start time.
 
-    def load_data(self) -> pd.DataFrame:
-        """Load market data from a CSV file specified in the configuration."""
-        file_path = self.config["data"]["file_path"]
-        data = pd.read_csv(file_path, parse_dates=["Date"], index_col="Date")
-        return data
+        Args:
+            start_time (str): The start time in "YYYY-MM-DD HH:MM:SS" format.
+            n (int): The number of minutes to subtract.
 
-    def calculate_performance_metrics(self, data: pd.DataFrame) -> Dict[str, float]:
-        """Calculate performance metrics like Sharpe ratio and volatility."""
-        strategy_returns = data["Strategy_Return"].dropna()
-        risk_free_rate = self.config["metrics"]["risk_free_rate"]
+        Returns:
+            str: The datetime n minutes before in "YYYY-MM-DD HH:MM:SS" format.
+        """
+        start_time_dt = datetime.strptime(start_time, "%Y-%m-%d %H:%M:%S")
+        result_time = start_time_dt - timedelta(minutes=n)
+        return result_time.strftime("%Y-%m-%d %H:%M:%S")
 
-        # Sharpe Ratio
-        excess_returns = strategy_returns - risk_free_rate / 252
-        sharpe_ratio = np.sqrt(252) * excess_returns.mean() / excess_returns.std()
+    def run(self, config: dict[str, Any]) -> None:
+        """
+        Run the backtest with the given price data.
 
-        # Volatility
-        volatility = strategy_returns.std() * np.sqrt(252)
+        :param price_data: A numpy array where each column corresponds to a security in the universe.
+        :return: None
+        """
+        start = self.get_time_n_minutes_before(self.start, self.lookback)
+        dl = Dataloader(config)
+        data = dl.load_data(start=start, end=self.end, symbols=self.symbols, features=self.features)
+        universe_size = len(self.strategy.setup.universe)
+        pnl_history = []
 
-        # Max Drawdown
-        cumulative_returns = (1 + strategy_returns).cumprod()
-        rolling_max = cumulative_returns.cummax()
-        drawdown = cumulative_returns / rolling_max - 1
-        max_drawdown = drawdown.min()
+        # Initialize with zeros for PnL tracking
+        weights = np.zeros(universe_size)
 
-        metrics = {
-            "Sharpe Ratio": sharpe_ratio,
-            "Volatility": volatility,
-            "Max Drawdown": max_drawdown,
+        for i in range(self.strategy.setup.warm_up, price_data.shape[0]):
+            # Simulate strategy evaluation and trading
+            weights = self.strategy.eval()
+            
+            # Calculate PnL for this period (simplified example)
+            period_pnl = np.sum(weights * (price_data[i] - price_data[i - 1]))
+            pnl_history.append(period_pnl)
+
+        self.pnl_history = np.array(pnl_history)
+        
+        # Calculate additional metrics
+        self.cumulative_pnl = np.sum(self.pnl_history)
+        self.volatility = np.std(self.pnl_history)
+        self.sharpe_ratio = (np.mean(self.pnl_history) / self.volatility) if self.volatility != 0 else 0
+        drawdown = np.maximum.accumulate(np.cumsum(self.pnl_history)) - np.cumsum(self.pnl_history)
+        self.max_drawdown = np.max(drawdown)
+
+        print("Backtest complete.")
+
+    def get_results(self) -> dict:
+        """
+        Return the PnL history and any other relevant metrics.
+
+        :return: A dictionary containing PnL history, cumulative PnL, Sharpe Ratio, Volatility, and Max Drawdown.
+        """
+        return {
+            "pnl_history": self.pnl_history,
+            "cumulative_pnl": self.cumulative_pnl,
+            "Sharpe Ratio": self.sharpe_ratio,
+            "Volatility": self.volatility,
+            "Max Drawdown": self.max_drawdown,
         }
-        return metrics
 
-    def run(self) -> pd.DataFrame:
-        """Run the backtest."""
-        data = self.load_data()
-        # data = self.strategy.generate_signals(data)
+    def plot_pnl(self) -> None:
+        """
+        Plot the cumulative PnL over time.
 
-        # Calculate returns
-        data["Daily_Return"] = data["Close"].pct_change()
-        data["Strategy_Return"] = data["Signal"].shift(1) * data["Daily_Return"]
-
-        # Calculate cumulative returns
-        data["Cumulative_Market_Return"] = (1 + data["Daily_Return"]).cumprod()
-        data["Cumulative_Strategy_Return"] = (1 + data["Strategy_Return"]).cumprod()
-
-        # Calculate and display performance metrics
-        metrics = self.calculate_performance_metrics(data)
-        print("Performance Metrics:")
-        for key, value in metrics.items():
-            print(f"{key}: {value:.2f}")
-
-        self.plot_results(data)
-        return data
-
-    def plot_results(self, data: pd.DataFrame) -> None:
-        """Plot the cumulative returns of the strategy and the market."""
-        plt.figure(figsize=(12, 6))
-        plt.plot(data["Cumulative_Market_Return"], label="Market Return")
-        plt.plot(data["Cumulative_Strategy_Return"], label="Strategy Return")
+        :return: None
+        """
+        cumulative_pnl = np.cumsum(self.pnl_history)
+        plt.figure(figsize=(10, 6))
+        plt.plot(cumulative_pnl, label="Cumulative PnL")
+        plt.title("Cumulative PnL Over Time")
+        plt.xlabel("Time Periods")
+        plt.ylabel("Cumulative PnL")
         plt.legend()
-        plt.title("Backtest Results")
-        plt.xlabel("Date")
-        plt.ylabel("Cumulative Return")
         plt.grid()
         plt.show()
 
-
 if __name__ == "__main__":
-    # Load configuration from YAML
-    with open("config.yaml", "r") as file:
-        config: Dict[str, Any] = yaml.safe_load(file)
+    # Load the YAML configuration
+    config_path = "tests/test_data/strategy/strat1.yaml"
+    config = yaml.safe_load(Path(config_path).read_text())
 
-    # Run the backtest
-    backtester = Backtester(config)
-    results = backtester.run()
+    # Simulated price data (replace with actual market data)
+    # Rows are time periods, columns are securities in the universe
+    np.random.seed(42)
+    price_data = np.cumsum(np.random.randn(500, len(config["setup"]["universe"])), axis=0)
 
-    # Optionally save results to a file
-    output_path = config["output"]["file_path"]
-    results.to_csv(output_path)
+    # Initialize and run the backtest
+    backtest = Backtest(MeanReversion, config_path)
+    backtest.run(price_data)
+
+    # Get and display results
+    results = backtest.get_results()
+    print("Cumulative PnL:", results["cumulative_pnl"])
+    print("Sharpe Ratio:", results["Sharpe Ratio"])
+    print("Volatility:", results["Volatility"])
+    print("Max Drawdown:", results["Max Drawdown"])
+    print("PnL History:", results["pnl_history"][:10])
+
+    # Plot the PnL
+    backtest.plot_pnl()
