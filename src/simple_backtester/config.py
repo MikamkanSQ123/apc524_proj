@@ -2,6 +2,7 @@ import yaml
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import List, final, Any, Union
+from types import SimpleNamespace
 from pathlib import Path
 import numpy as np
 from numpy.typing import NDArray
@@ -16,10 +17,6 @@ class SetupConfig:
     initial_capital: float
     universe: List[str]
     features: List[str]
-
-
-class ParametersConfig:
-    pass
 
 
 @dataclass(frozen=True)
@@ -68,8 +65,9 @@ class Strategy(ABC):
         if missing_sections:
             raise ValueError(f"Missing mandatory sections in YAML: {missing_sections}")
 
+        self.features = SimpleNamespace()
         self._setup = SetupConfig(**config["setup"])
-        self._parameters = ParametersConfig()
+        self._parameters = SimpleNamespace()
         if "parameters" in config:
             for key, value in config["parameters"].items():
                 setattr(self.parameters, key, value)
@@ -80,11 +78,11 @@ class Strategy(ABC):
         self.__cool_downcount = 0
 
     @abstractmethod
-    def evaluate(self, data: NDArray[np.float64]) -> NDArray[np.float64]:
+    def evaluate(self) -> NDArray[np.float64]:
         pass
 
     @final
-    def eval(self, data: NDArray[np.float64]) -> NDArray[np.float64]:
+    def eval(self) -> NDArray[np.float64]:
         # Check if we are in cool down period
         if self.__cool_downcount > 0:
             self.__cool_downcount -= 1
@@ -102,14 +100,14 @@ class Strategy(ABC):
             return np.zeros_like(self.setup.universe)
 
         # Compute weights as user defined
-        return self.evaluate(data)
+        return self.evaluate()
 
     @property
     def setup(self) -> SetupConfig:
         return self._setup
 
     @property
-    def parameters(self) -> ParametersConfig:
+    def parameters(self) -> SimpleNamespace:
         return self._parameters
 
     @property
