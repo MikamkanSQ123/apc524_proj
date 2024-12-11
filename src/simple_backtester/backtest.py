@@ -1,14 +1,14 @@
-import yaml
 from pathlib import Path
 import numpy as np
 import matplotlib.pyplot as plt
 from .config import Strategy
-from .preprocess import Dataloader
+from .preprocess.dataloader import DataLoader
 from typing import Any, Union
 from datetime import datetime, timedelta
 from tests.test_data.strategy.strat1 import MeanReversion
 
-class Backtest:
+
+class Backtester:
     def __init__(self, strategy_class: type[Strategy], config_path: Union[str, Path]):
         self.strategy = strategy_class(config_path)
 
@@ -41,29 +41,53 @@ class Backtest:
         :return: None
         """
         start = self.get_time_n_minutes_before(self.start, self.lookback)
-        dl = Dataloader(config)
-        data = dl.load_data(start=start, end=self.end, symbols=self.symbols, features=self.features)
+        dl = DataLoader(config)
+        data = dl.load_data(
+            start=start, end=self.end, symbols=self.symbols, features=self.features
+        )
+        close = dl.load_data(
+            start=self.get_time_n_minutes_before(self.start, 1),
+            end=self.end,
+            symbols=self.symbols,
+            features=["close"],
+        )
+        close_to_close = close["close"].diff(1).dropna().reset_index()
         universe_size = len(self.strategy.setup.universe)
         pnl_history = []
 
         # Initialize with zeros for PnL tracking
-        weights = np.zeros(universe_size)
+        init_weights = np.zeros(universe_size)
 
-        for i in range(self.strategy.setup.warm_up, price_data.shape[0]):
+        for i in range(len(list(data.values())[0]) - self.lookback):
             # Simulate strategy evaluation and trading
-            weights = self.strategy.eval()
-            
-            # Calculate PnL for this period (simplified example)
-            period_pnl = np.sum(weights * (price_data[i] - price_data[i - 1]))
+            for feature_name in self.features:
+                # Dynamically set each feature as an attribute of `self.strategy.features`
+                setattr(
+                    self.strategy.features,
+                    feature_name,
+                    data[feature_name]
+                    .iloc[i : (i + self.lookback)][self.symbols]
+                    .to_numpy(),
+                )
+
+            curr_weights = self.strategy.eval()
+            period_pnl = np.sum(
+                (curr_weights - init_weights) * close_to_close.iloc[i][self.symbols]
+            )
+            init_weights = curr_weights
             pnl_history.append(period_pnl)
 
         self.pnl_history = np.array(pnl_history)
-        
+
         # Calculate additional metrics
         self.cumulative_pnl = np.sum(self.pnl_history)
         self.volatility = np.std(self.pnl_history)
-        self.sharpe_ratio = (np.mean(self.pnl_history) / self.volatility) if self.volatility != 0 else 0
-        drawdown = np.maximum.accumulate(np.cumsum(self.pnl_history)) - np.cumsum(self.pnl_history)
+        self.sharpe_ratio = (
+            (np.mean(self.pnl_history) / self.volatility) if self.volatility != 0 else 0
+        )
+        drawdown = np.maximum.accumulate(np.cumsum(self.pnl_history)) - np.cumsum(
+            self.pnl_history
+        )
         self.max_drawdown = np.max(drawdown)
 
         print("Backtest complete.")
@@ -98,19 +122,23 @@ class Backtest:
         plt.grid()
         plt.show()
 
+
 if __name__ == "__main__":
     # Load the YAML configuration
     config_path = "tests/test_data/strategy/strat1.yaml"
-    config = yaml.safe_load(Path(config_path).read_text())
+    # config = yaml.safe_load(Path(config_path).read_text())
 
     # Simulated price data (replace with actual market data)
     # Rows are time periods, columns are securities in the universe
-    np.random.seed(42)
-    price_data = np.cumsum(np.random.randn(500, len(config["setup"]["universe"])), axis=0)
-
     # Initialize and run the backtest
-    backtest = Backtest(MeanReversion, config_path)
-    backtest.run(price_data)
+    backtest = Backtester(MeanReversion, config_path)
+    path = "./src/simple_backtester/data/feature/"
+    config = {
+        "data_path": path,
+        # "tech_indicators": ["ma", "macd", "rsi"],
+        "features": [file.name[:-4] for file in Path(path).iterdir() if file.is_file()],
+    }
+    backtest.run(config)
 
     # Get and display results
     results = backtest.get_results()
