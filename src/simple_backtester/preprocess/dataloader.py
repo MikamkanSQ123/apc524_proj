@@ -6,7 +6,7 @@ from pathlib import Path
 path = "./src/simple_backtester/data/feature/"
 config = {
     "data_path": path,
-    "tech_indicators": ["ma", "macd", "rsi"],
+    # "tech_indicators": ["ma", "macd", "rsi"],
     "features": [file.name[:-4] for file in Path(path).iterdir() if file.is_file()],
 }
 
@@ -14,8 +14,27 @@ config = {
 class DataLoader:
     def __init__(self, config: dict[str, Any] = config):
         self.config = config
+        # Data path should be provided
+        assert "data_path" in config
+        if not Path(config["data_path"]).exists():
+            raise FileNotFoundError(f"Path {config['data_path']} not found")
         print(f'Loading data from {config["data_path"]}')
+
+        # Features should be provided
+        if "features" not in config:
+            self.config["features"] = [
+                file.name[:-4]
+                for file in Path(config["data_path"]).iterdir()
+                if file.is_file()
+            ]
         print(f'Possible target features: {config["features"]}')
+
+        # Technical indicators provided ( default: all ) (这个功能你可以不用但我不能不加)
+        if "tech_indicators" not in config:
+            self.config["tech_indicators"] = [
+                name for name in dir(Techlib) if not name.startswith("__")
+            ]
+
         self.data: dict[str, Any] = {}
 
     @staticmethod
@@ -38,7 +57,7 @@ class DataLoader:
         end: str,
         symbols: list[str],
         features: list[str],
-        args: dict[str, Any],
+        args: dict[str, Any] = {},
         base: str = "price",
     ) -> dict[str, Union[None, pd.DataFrame]]:
         assert base in self.config["features"]
@@ -57,7 +76,7 @@ class DataLoader:
                 if not isinstance(farg, list):
                     farg = [farg]
                 name = (
-                    f"{base}_{feature}_{"_".join([str(arg) for arg in farg])}"
+                    f"{feature}_{'_'.join([str(arg) for arg in farg])}"
                     if farg
                     else feature
                 )
@@ -80,4 +99,10 @@ if __name__ == "__main__":
         ["ma", "rsi", "macd"],
         {"ma": 10, "macd": [12, 26]},
         base="price",
+    )
+    features = dl.load_data(
+        "2024-11-11 00:00:00",
+        "2024-11-11 23:54:00",
+        ["BTC", "ZRX"],
+        ["price", "return"],
     )
