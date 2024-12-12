@@ -52,19 +52,25 @@ class DataLoader:
         symbols: list[str],
         features: list[str],
         args: dict[str, Any] = {},
-        base: str = "price",
+        base: str = "",
     ) -> dict[str, Union[None, pd.DataFrame]]:
-        assert base in self.config["features"]
-        self.load_from_file(base)
+        if base:
+            assert base in self.config["features"]
+            self.load_from_file(base)
 
         features_dict: dict[str, Any] = {}
         for feature in features:
             # load data from local files if it already exists in path
             if feature in self.config["features"]:
                 self.load_from_file(feature)
-                features_dict[feature] = self.data[feature][symbols][start:end]  # type: ignore[misc]
+                try:
+                    features_dict[feature] = self.data[feature][symbols][start:end]  # type: ignore[misc]
+                except:
+                    print(f"Error: {symbols} at {start}:{end} not found in local!")
+                    features_dict[feature] = None
             # calculate technical indicators
             elif feature in self.config["tech_indicators"]:
+                assert base, "Base feature should be provided for technical indicators"
                 farg = args.get(feature, [])
                 if not isinstance(farg, list):
                     farg = [farg]
@@ -84,8 +90,10 @@ class DataLoader:
             if (f not in self.config["features"])
             and (f not in self.config["tech_indicators"])
         ]
-        print(f"Features not found: {features_not_found}")
-        if self.config["source"] == "ccxt":
+        features_not_found += [f for f in features_dict if features_dict[f] is None]
+        
+        if features_not_found: print(f"Features not found: {features_not_found}")
+        if self.config["source"] == "ccxt" and features_not_found:
             print("Fetching data from ccxt...")
             dict_not_found = ccxtFetcher.load_data(
                 start, end, symbols, features_not_found

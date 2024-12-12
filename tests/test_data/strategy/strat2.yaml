@@ -1,0 +1,25 @@
+strategy:
+  name: "MeanReversion"
+  description: "A simple mean-reversion strategy."
+  source: "tests/test_data/strategy/strat1.py"
+
+setup:
+  start_date: "2022-01-01 04:16:00"
+  end_date: "2022-01-01 22:18:00"
+  universe:
+    - "BTC/USD"
+    - "1INCH/USD"
+  warm_up: 100
+  look_back: 100
+  initial_capital: 0
+  features:
+    - "close"
+
+parameters:
+  ma_base: 10
+  ma_window: [30, 60, 100]
+  cross_weight: [0.4, 0.3, 0.3]
+
+risk:
+  stop_loss: 0.02
+  take_profit: 0.05
