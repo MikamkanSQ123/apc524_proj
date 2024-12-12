@@ -23,21 +23,24 @@ class DataLoader:
             ]
         print(f'Possible target features: {config["features"]}')
 
-        # Technical indicators provided ( default: all ) (这个功能你可以不用但我不能不加)
+        # Technical indicators provided ( default: all ) ( optional )
         if "tech_indicators" not in config:
             self.config["tech_indicators"] = [
                 name for name in dir(Techlib) if not name.startswith("__")
             ]
 
+        # Data storage
         self.data: dict[str, Any] = {}
 
     @staticmethod
     def read(file: Union[str, Path]) -> pd.DataFrame:
+        " Read csv files, with index and time transformation"
         if isinstance(file, str):
             file = Path(file)
         return pd.read_csv(file, index_col=0, parse_dates=True)
 
     def load_from_file(self, name: str) -> Any:
+        " Load data from local files"
         if name not in self.config["features"]:
             raise ValueError(f"Feature {name} not found in {self.config['data_path']}")
         if name not in self.data:
@@ -54,6 +57,20 @@ class DataLoader:
         args: dict[str, Any] = {},
         base: str = "",
     ) -> dict[str, Union[None, pd.DataFrame]]:
+        """ 
+        Load data from local files/online sources or calculate technical indicators.
+        
+        Args:
+            start(str): start time
+            end(str): end time
+            symbols(list[str]): list of symbols (Eg. ["BTC", "ETH"])
+            features(list[str]): list of features (Eg. ["close", "return", "ma"])
+            args(dict[str, Any]): arguments for technical indicators (Eg. {"ma": 10})
+            base(str): base feature for technical indicators (Eg. "close")
+            
+        Return:
+            dict[str, Union[None, pd.DataFrame]]: dictionary of features key: feature name, value: feature data
+        """
         if base:
             assert base in self.config["features"]
             self.load_from_file(base)
@@ -94,17 +111,19 @@ class DataLoader:
 
         if features_not_found:
             print(f"Features not found: {features_not_found}")
-        if self.config["source"] == "ccxt" and features_not_found:
-            print("Fetching data from ccxt...")
-            dict_not_found = ccxtFetcher.load_data(
-                start, end, symbols, features_not_found
-            )
-            self.data.update(dict_not_found)
-            features_dict.update(dict_not_found)
+            # Fetch online sources if data missing
+            if self.config["source"] == "ccxt":
+                print("Fetching data from ccxt...")
+                dict_not_found = ccxtFetcher.load_data(
+                    start, end, symbols, features_not_found
+                )
+                self.data.update(dict_not_found)
+                features_dict.update(dict_not_found)
         return features_dict
 
     def _test(self) -> Union[pd.DataFrame, "pd.Series[Any]"]:
-        return Techlib.ma(self.data["BTC"], 10)
+        " A test function to check if the class is working"
+        return Techlib.ma(pd.Series(list(range(100))), 10)
 
 
 class ccxtFetcher(object):
@@ -113,6 +132,14 @@ class ccxtFetcher(object):
 
     @staticmethod
     def is_feasible(exchange: Union[str, ccxt.Exchange], func: str) -> bool:
+        """
+        Check if the exchange in ccxt supports the function
+        Args:
+            exchange (Union[str, ccxt.Exchange]): exchange name or a ccxt exchange object (Eg. "binanceus")
+            func (str): function name specialized in cxxt (Eg. "fetchOHLCV")
+        Returns:
+            bool: True if the function is supported
+        """
         try:
             if isinstance(exchange, str):
                 exchange = getattr(ccxt, exchange)()
@@ -127,6 +154,7 @@ class ccxtFetcher(object):
     def get_time(
         start: Union[str, pd.Timestamp], end: Union[str, pd.Timestamp], freq: str = "D"
     ) -> Any:
+        " Generate time range"
         return pd.date_range(start, end, freq=freq).strftime("%Y-%m-%d").tolist()
 
     @staticmethod
@@ -137,6 +165,19 @@ class ccxtFetcher(object):
         timeframe: str = "1m",
         bars: int = 100000,
     ) -> Any:
+        """
+        Get tick(date) data from ccxt
+        
+        Args:
+            exchange (Union[str, ccxt.Exchange]): exchange name or a ccxt exchange object (Eg. "binanceus")
+            symbol (str): symbol name (Eg. "BTC/USDT")
+            date (str): date (Eg. "2022-01-01") / timestamp (Eg. "2022-01-01 00:00:00")
+            timeframe (str): timeframe (Eg. "1m")
+            bars (int): number of data to fetch (Eg. 100000) (this API has a limit for bars at one time)
+            
+        Return:
+            Any: DataFrame of tick data
+        """
         if isinstance(exchange, str):
             exchange = getattr(ccxt, exchange)()
         since = exchange.parse8601(f"{date}T00:00:00Z")
@@ -159,6 +200,19 @@ class ccxtFetcher(object):
         end: Union[str, pd.Timestamp],
         timeframe: str = "1m",
     ) -> Any:
+        """
+        Merge symbols tick data and reframe features
+        
+        Args:
+            exchange (Union[str, ccxt.Exchange]): exchange name or a ccxt exchange object (Eg. "binanceus")
+            symbols (list[str]): list of symbols (Eg. ["BTC/USDT", "ETH/USDT"])
+            start (Union[str, pd.Timestamp]): start time
+            end (Union[str, pd.Timestamp]): end time
+            timeframe (str): timeframe (Eg. "1m")
+        
+        Return:
+            Any: DataFrame of tick data with all required symbols
+        """
         time = ccxtFetcher.get_time(start, end)
         dfs = pd.DataFrame()
         for t in time:
@@ -180,6 +234,20 @@ class ccxtFetcher(object):
         exchange: str = "binanceus",
         timeframe: str = "1m",
     ) -> Any:
+        """
+        Get required features from ccxt and return as a dictionary
+        
+        Args:
+            start (Union[str, pd.Timestamp]): start time
+            end (Union[str, pd.Timestamp]): end time
+            symbols (list[str]): list of symbols (Eg. ["BTC/USDT", "ETH/USDT"])
+            features (list[str]): list of features (Eg. ["open", "close", "volume"])
+            exchange (str): exchange name (Eg. "binanceus")
+            timeframe (str): timeframe (Eg. "1m")
+        
+        Return:
+            Any: dictionary of features key: feature name, value: feature data
+        """
         possible_features = ["open", "high", "low", "close", "volume"]
         fts = [f for f in features if f in possible_features]
         df = ccxtFetcher.get_data(exchange, symbols, start, end, timeframe)
