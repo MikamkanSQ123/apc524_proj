@@ -1,4 +1,3 @@
-import yaml
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import List, final, Any, Union
@@ -6,6 +5,7 @@ from types import SimpleNamespace
 from pathlib import Path
 import numpy as np
 from numpy.typing import NDArray
+from .utils.yaml_helper import YamlParser
 
 
 @dataclass(frozen=True)
@@ -55,10 +55,10 @@ class Strategy(ABC):
     """
 
     @final
-    def __init__(self, config_path: Union[str, Path]):
-        if isinstance(config_path, str):
-            config_path = Path(config_path)
-        config: dict[str, Any] = yaml.safe_load(config_path.read_text())
+    def __init__(self, config: dict[str, Any]):
+        # if isinstance(config_path, str):
+        #     config_path = Path(config_path)
+        # config: dict[str, Any] = yaml.safe_load(config_path.read_text())
 
         required_sections = {"setup"}
         missing_sections = required_sections - config.keys()
@@ -86,7 +86,7 @@ class Strategy(ABC):
         # Check if we are in cool down period
         if self.__cool_downcount > 0:
             self.__cool_downcount -= 1
-            return np.zeros_like(self.setup.universe)
+            return np.zeros_like(self.setup.universe, dtype=np.float64)
 
         self.__running_pnl += self.__pnl[-1]
 
@@ -97,7 +97,7 @@ class Strategy(ABC):
         ):
             self.__running_pnl = 0
             self.__cool_downcount = self.risk.cool_down
-            return np.zeros_like(self.setup.universe)
+            return np.zeros_like(self.setup.universe, dtype=np.float64)
 
         # Compute weights as user defined
         return self.evaluate()
@@ -113,3 +113,7 @@ class Strategy(ABC):
     @property
     def risk(self) -> RiskConfig:
         return self._risk
+
+    @classmethod
+    def from_yaml(cls, config_path: Union[str, Path]) -> List["Strategy"]:
+        return [cls(config) for config in YamlParser(config_path).load_yaml_matrix()]

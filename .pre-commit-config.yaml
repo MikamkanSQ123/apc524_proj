@@ -8,6 +8,11 @@ repos:
       - id: check-yaml
       - id: check-toml
 
+  # Strip output from jupyter notebooks
+  - repo: https://github.com/kynan/nbstripout
+    rev: 0.8.1
+    hooks:
+      - id: nbstripout
 
   # Ruff linter with specific checks and bugbear, isort, ruff, and pyupgrade plugins
   - repo: https://github.com/astral-sh/ruff-pre-commit

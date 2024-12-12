@@ -6,12 +6,18 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from .config import Strategy
 from .preprocess.dataloader import DataLoader
-from typing import Any, Union, Optional, Type
+from typing import Any, Union, Optional, Type, List
+from numpy.typing import NDArray
+from .data_protocol import Numeric
 from datetime import datetime, timedelta
 
 
 class Backtester:
-    def __init__(self, strategy_module_path: str, config_path: Union[str, Path]):
+    def __init__(
+        self,
+        strategy_module_path: str,
+        config_path: Union[str, Path],
+    ) -> None:
         """
         Initialize the backtester.
 
@@ -29,13 +35,13 @@ class Backtester:
             )
 
         # Instantiate the strategy
-        self.strategy = self.strategy_class(config_path)
+        self.strategy_list = self.strategy_class.from_yaml(config_path)
 
-        self.start = self.strategy.setup.start_date
-        self.end = self.strategy.setup.end_date
-        self.lookback = self.strategy.setup.look_back
-        self.symbols = self.strategy.setup.universe
-        self.features = self.strategy.setup.features
+        self.pnl_history: List[NDArray] = []
+        self.cumulative_pnl: List[Numeric] = []
+        self.sharpe_ratio: List[Numeric] = []
+        self.volatility: List[Numeric] = []
+        self.max_drawdown: List[Numeric] = []
 
     @staticmethod
     def load_strategy_class(module_path: str) -> Type[Strategy]:
@@ -98,7 +104,31 @@ class Backtester:
         result_time = start_time_dt - timedelta(minutes=n)
         return result_time.strftime("%Y-%m-%d %H:%M:%S")
 
-    def run(self, config: dict[str, Any]) -> None:
+    def run(self, config: dict[str, Any], nthread: int = 1) -> None:
+        """
+        Executes a batch run of backtests for each strategy in the strategy list.
+
+        Args:
+            config (dict[str, Any]): A dictionary containing configuration parameters for the backtest.
+        Returns:
+            None
+        """
+
+        if nthread > 1:
+            raise ValueError("Multithreading is not supported yet.")
+        self.clear_results()
+        for strategy in self.strategy_list:
+            self.strategy = strategy
+            self.start = self.strategy.setup.start_date
+            self.end = self.strategy.setup.end_date
+            self.lookback = self.strategy.setup.look_back
+            self.symbols = self.strategy.setup.universe
+            self.features = self.strategy.setup.features
+            self._run(config)
+
+        print("Backtest complete.")
+
+    def _run(self, config: dict[str, Any]) -> None:
         """
         Run the backtest with the given price data.
 
@@ -155,37 +185,56 @@ class Backtester:
             period_pnl: float = np.sum(
                 (curr_weights - init_weights) * close_to_close.iloc[i][self.symbols]
             )
+            self.strategy._Strategy__pnl.append(period_pnl)  # type: ignore[attr-defined]
             init_weights = curr_weights
             pnl_history.append(period_pnl)
 
-        self.pnl_history = np.array(pnl_history)
+        self.pnl_history.append(np.array(pnl_history))
 
         # Calculate additional metrics
-        self.cumulative_pnl: float = np.sum(self.pnl_history)
-        self.volatility = np.std(self.pnl_history)
-        self.sharpe_ratio = (
-            (np.mean(self.pnl_history) / self.volatility) if self.volatility != 0 else 0
+        self.cumulative_pnl.append(np.sum(pnl_history))
+        volatility = np.std(pnl_history)
+        self.volatility.append(volatility)
+        self.sharpe_ratio.append(
+            (np.mean(pnl_history) / volatility) if volatility != 0 else 0.0
         )
-        drawdown: float = np.maximum.accumulate(
-            np.cumsum(self.pnl_history)
-        ) - np.cumsum(self.pnl_history)
-        self.max_drawdown: float = np.max(drawdown)
+        drawdown: float = np.maximum.accumulate(np.cumsum(pnl_history)) - np.cumsum(
+            pnl_history
+        )
+        self.max_drawdown.append(np.max(drawdown))
 
-        print("Backtest complete.")
-
-    def get_results(self) -> dict[str, Any]:
+    def get_results(self) -> Union[dict[str, Any], List[dict[str, Any]]]:
         """
         Return the PnL history and any other relevant metrics.
 
         :return: A dictionary containing PnL history, cumulative PnL, Sharpe Ratio, Volatility, and Max Drawdown.
         """
-        return {
-            "pnl_history": self.pnl_history,
-            "cumulative_pnl": self.cumulative_pnl,
-            "Sharpe Ratio": self.sharpe_ratio,
-            "Volatility": self.volatility,
-            "Max Drawdown": self.max_drawdown,
-        }
+        results = []
+        for res in zip(
+            self.pnl_history,
+            self.cumulative_pnl,
+            self.sharpe_ratio,
+            self.volatility,
+            self.max_drawdown,
+        ):
+            results.append(
+                dict(
+                    zip(
+                        [
+                            "pnl_history",
+                            "cumulative_pnl",
+                            "Sharpe Ratio",
+                            "Volatility",
+                            "Max Drawdown",
+                        ],
+                        res,
+                    )
+                )
+            )
+
+        if len(results) == 1:
+            return results[0]
+        return results
 
     def plot_pnl(self) -> None:
         """
@@ -193,15 +242,37 @@ class Backtester:
 
         :return: None
         """
-        cumulative_pnl = np.cumsum(self.pnl_history)
-        plt.figure(figsize=(10, 6))
-        plt.plot(cumulative_pnl, label="Cumulative PnL")
+        fig, axes = plt.subplots(
+            len(self.pnl_history),
+            1,
+            figsize=(8, 6 * len(self.pnl_history)),
+            sharex=True,
+            sharey=True,
+        )
+        if isinstance(axes, np.ndarray):
+            axes = axes.flatten()
+        else:
+            axes = [axes]
+        for i, ax in enumerate(axes):
+            cumulative_pnl = np.cumsum(self.pnl_history[i])
+            ax.plot(cumulative_pnl)
+            ax.set_xlabel("Time Periods")
+            ax.set_ylabel("Cumulative PnL")
+            ax.grid()
         plt.title("Cumulative PnL Over Time")
-        plt.xlabel("Time Periods")
-        plt.ylabel("Cumulative PnL")
-        plt.legend()
-        plt.grid()
         plt.show()
+
+    def clear_results(self) -> None:
+        """
+        Clear the results of the backtest.
+
+        :return: None
+        """
+        self.pnl_history = []
+        self.cumulative_pnl = []
+        self.sharpe_ratio = []
+        self.volatility = []
+        self.max_drawdown = []
 
 
 if __name__ == "__main__":
@@ -221,7 +292,7 @@ if __name__ == "__main__":
     backtest.run(config)
 
     # Get and display results
-    results = backtest.get_results()
+    results: dict[str, Any] = backtest.get_results()  # type: ignore[assignment]
     print("Cumulative PnL:", results["cumulative_pnl"])
     print("Sharpe Ratio:", results["Sharpe Ratio"])
     print("Volatility:", results["Volatility"])
