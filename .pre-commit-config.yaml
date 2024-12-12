@@ -27,6 +27,7 @@ repos:
         additional_dependencies:
         - nox
         - matplotlib
+        - Flask
         - types-Flask  # Type stubs for Flask
         - types-PyYAML  # Type stubs for PyYAML
         - pandas-stubs  # Type stubs for pandas
