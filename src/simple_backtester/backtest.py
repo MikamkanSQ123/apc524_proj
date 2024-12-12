@@ -104,35 +104,7 @@ class Backtester:
         result_time = start_time_dt - timedelta(minutes=n)
         return result_time.strftime("%Y-%m-%d %H:%M:%S")
 
-    def run(self, config: dict[str, Any]) -> None:
-        """
-        Executes the backtest for a single strategy.
-
-        Args:
-            config (dict[str, Any]): Configuration dictionary containing parameters for the backtest.
-        Raises:
-            ValueError: If more than one strategy is provided in the strategy list.
-        Notes:
-            - This method sets up the backtest environment using the provided strategy's setup parameters.
-            - For running multiple strategies on a grid search, use the `batch_run` method instead.
-        """
-
-        if len(self.strategy_list) > 1:
-            raise ValueError(
-                "For running multiple strategies on a grid search, use the batch_run method."
-            )
-        self.strategy = self.strategy_list[0]
-        self.start = self.strategy.setup.start_date
-        self.end = self.strategy.setup.end_date
-        self.lookback = self.strategy.setup.look_back
-        self.symbols = self.strategy.setup.universe
-        self.features = self.strategy.setup.features
-        self.clear_results()
-        self._run(config)
-
-        print("Backtest complete.")
-
-    def batch_run(self, config: dict[str, Any], nthread: int = 1) -> None:
+    def run(self, config: dict[str, Any], nthread: int = 1) -> None:
         """
         Executes a batch run of backtests for each strategy in the strategy list.
 
