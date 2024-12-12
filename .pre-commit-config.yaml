@@ -25,10 +25,10 @@ repos:
       - id: mypy
         args: [--strict]
         additional_dependencies:
-        - nox
-        - matplotlib
-        - types-Flask  # Type stubs for Flask
-        - types-PyYAML  # Type stubs for PyYAML
-        - pandas-stubs  # Type stubs for pandas
-        - numpy  # Type stubs for numpy
-        exclude: ^tests/
+          - nox
+          - matplotlib
+          - types-Flask  # Type stubs for Flask
+          - types-PyYAML  # Type stubs for PyYAML
+          - pandas-stubs  # Type stubs for pandas
+          - numpy  # Type stubs for numpy
+        exclude: ^tests/|^examples/
