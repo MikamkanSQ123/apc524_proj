@@ -11,7 +11,12 @@ from datetime import datetime, timedelta
 
 
 class Backtester:
-    def __init__(self, strategy_module_path: str, config_path: Union[str, Path]):
+    def __init__(
+        self,
+        strategy_module_path: str,
+        config_path: Union[str, Path],
+        strategy: Optional[Strategy] = None,
+    ) -> None:
         """
         Initialize the backtester.
 
@@ -29,7 +34,10 @@ class Backtester:
             )
 
         # Instantiate the strategy
-        self.strategy = self.strategy_class(config_path)
+        if strategy:
+            self.strategy = strategy
+        else:
+            self.strategy = self.strategy_class.from_yaml(config_path)[0]
 
         self.start = self.strategy.setup.start_date
         self.end = self.strategy.setup.end_date

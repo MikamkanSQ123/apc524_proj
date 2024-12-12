@@ -1,5 +1,6 @@
 import yaml
-from typing import Any, Dict, Iterator
+from typing import Any, Dict, Iterator, Union
+from pathlib import Path
 import re
 from itertools import product
 from collections.abc import Iterable
@@ -20,7 +21,7 @@ class YamlParser:
             Saves the given dictionary data to the YAML file.
     """
 
-    def __init__(self, file_path: str) -> None:
+    def __init__(self, file_path: Union[str, Path]) -> None:
         self.file_path = file_path
 
     def load_yaml(self) -> Dict[str, Any]:
