@@ -213,7 +213,7 @@ class Backtester:
             period_pnl: float = np.sum(
                 (curr_weights - init_weights) * close_to_close.iloc[i][self.symbols]
             )
-            self.strategy._Strategy__pnl.append(period_pnl)
+            self.strategy._Strategy__pnl.append(period_pnl)  # type: ignore[attr-defined]
             init_weights = curr_weights
             pnl_history.append(period_pnl)
 

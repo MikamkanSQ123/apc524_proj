@@ -17,7 +17,7 @@ def test_strategy_inheritance():
         def evaluate(self):
             pass
 
-    tstrat = TestStrategy("tests/test_data/strategy/strat1.yaml")
+    tstrat = TestStrategy.from_yaml("tests/test_data/strategy/strat1.yaml")[0]
     assert isinstance(tstrat, Strategy)
     assert isinstance(tstrat, TestStrategy)
     assert tstrat.setup.warm_up == 100
@@ -45,7 +45,7 @@ def test_strategy_evaluate():
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     MeanReversion = module.MeanReversion
-    tstrat = MeanReversion("tests/test_data/strategy/strat1.yaml")
+    tstrat = MeanReversion.from_yaml("tests/test_data/strategy/strat1.yaml")[0]
     data = np.arange(0, 300).reshape(100, 3).cumsum(axis=0)
     tstrat.features.close = data
     weights = tstrat.evaluate()
