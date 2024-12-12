@@ -5,7 +5,7 @@ from pathlib import Path
 import ccxt  # type: ignore[import-not-found]
 
 source = "ccxt"
-path = f".src/tests/test_data/data/{source}/feature/"
+path = f"tests/test_data/data/{source}/feature/"
 config = {
     "source": source,
     "data_path": path,
