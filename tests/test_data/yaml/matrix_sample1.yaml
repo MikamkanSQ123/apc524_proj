@@ -1,0 +1,10 @@
+matrix:
+  param1: 1
+  param2:
+    - 1
+    - 2
+
+params:
+  PARAM1: ${param1}
+  PARAM2: ${param2}
+  

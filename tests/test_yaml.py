@@ -29,3 +29,14 @@ def test_yaml_dump(tmp_path):
         hashlib.md5(file_path.read_text().replace(" ", "").encode()).hexdigest()
         == "4225f62ca43faaa0a8476aed0af80698"
     )
+
+
+def test_load_matrix():
+    file_path = "tests/test_data/yaml/matrix_sample1.yaml"
+    parser = yaml_helper.YamlParser(file_path)
+    result = list(parser.load_yaml_matrix())
+    expected = [
+        {"params": {"PARAM1": 1, "PARAM2": 1}},
+        {"params": {"PARAM1": 1, "PARAM2": 2}},
+    ]
+    assert result == expected
