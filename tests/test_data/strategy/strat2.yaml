@@ -3,6 +3,12 @@ strategy:
   description: "A simple mean-reversion strategy."
   source: "tests/test_data/strategy/strat1.py"
 
+matrix:
+  ma_base: [5, 10, 20]
+  cross_weight: 
+    - [0.4, 0.3, 0.3]
+    - [0.2, 0.2, 0.6]
+
 setup:
   start_date: "2022-01-01 04:16:00"
   end_date: "2022-01-01 22:18:00"
@@ -16,9 +22,9 @@ setup:
     - "close"
 
 parameters:
-  ma_base: 10
+  ma_base: ${ma_base}
   ma_window: [30, 60, 100]
-  cross_weight: [0.4, 0.3, 0.3]
+  cross_weight: ${cross_weight}
 
 risk:
   stop_loss: 0.02
