@@ -12,7 +12,7 @@ def test_backtest_evaluate():
     # Dynamically load the strategy class
     backtest = Backtester(strategy_module_path, config_path)
     source = "local"
-    path = f"/tests/test_data/data/{source}/feature/"
+    path = f"tests/test_data/data/{source}/feature/"
     config = {
         "source": source,
         "data_path": path,
