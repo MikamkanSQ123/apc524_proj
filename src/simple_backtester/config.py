@@ -86,7 +86,7 @@ class Strategy(ABC):
         # Check if we are in cool down period
         if self.__cool_downcount > 0:
             self.__cool_downcount -= 1
-            return np.zeros_like(self.setup.universe)
+            return np.zeros_like(self.setup.universe, dtype=np.float64)
 
         self.__running_pnl += self.__pnl[-1]
 
@@ -97,7 +97,7 @@ class Strategy(ABC):
         ):
             self.__running_pnl = 0
             self.__cool_downcount = self.risk.cool_down
-            return np.zeros_like(self.setup.universe)
+            return np.zeros_like(self.setup.universe, dtype=np.float64)
 
         # Compute weights as user defined
         return self.evaluate()
