@@ -65,7 +65,7 @@ class DataLoader:
                 self.load_from_file(feature)
                 try:
                     features_dict[feature] = self.data[feature][symbols][start:end]  # type: ignore[misc]
-                except:
+                except KeyError:
                     print(f"Error: {symbols} at {start}:{end} not found in local!")
                     features_dict[feature] = None
             # calculate technical indicators
@@ -91,8 +91,9 @@ class DataLoader:
             and (f not in self.config["tech_indicators"])
         ]
         features_not_found += [f for f in features_dict if features_dict[f] is None]
-        
-        if features_not_found: print(f"Features not found: {features_not_found}")
+
+        if features_not_found:
+            print(f"Features not found: {features_not_found}")
         if self.config["source"] == "ccxt" and features_not_found:
             print("Fetching data from ccxt...")
             dict_not_found = ccxtFetcher.load_data(
