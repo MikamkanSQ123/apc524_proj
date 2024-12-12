@@ -7,4 +7,3 @@ matrix:
 params:
   PARAM1: ${param1}
   PARAM2: ${param2}
-  
