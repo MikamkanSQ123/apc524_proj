@@ -5,8 +5,8 @@ from simple_backtester.backtest import Backtester
 
 def test_backtest_evaluate():
     # Load the YAML configuration and the new strategy
-    strategy_module_path = "../tests/test_data/strategy/strat1.py"
-    config_path = "../tests/test_data/strategy/strat1.yaml"
+    strategy_module_path = "tests/test_data/strategy/strat1.py"
+    config_path = "tests/test_data/strategy/strat1.yaml"
     # config = yaml.safe_load(Path(config_path).read_text())
 
     # Dynamically load the strategy class
