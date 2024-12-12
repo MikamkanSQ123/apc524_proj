@@ -4,18 +4,9 @@ from .techlib import Techlib
 from pathlib import Path
 import ccxt  # type: ignore[import-not-found]
 
-source = "ccxt"
-path = f"tests/test_data/data/{source}/feature/"
-config = {
-    "source": source,
-    "data_path": path,
-    # "tech_indicators": ["ma", "macd", "rsi"],
-    "features": [file.name[:-4] for file in Path(path).iterdir() if file.is_file()],
-}
-
 
 class DataLoader:
-    def __init__(self, config: dict[str, Any] = config):
+    def __init__(self, config: dict[str, Any]):
         self.config = config
         # Data path should be provided
         assert "data_path" in config
@@ -191,7 +182,15 @@ class ccxtFetcher(object):
 
 
 if __name__ == "__main__":
-    dl = DataLoader()
+    source = "ccxt"
+    path = f"tests/test_data/data/{source}/feature/"
+    config = {
+        "source": source,
+        "data_path": path,
+        # "tech_indicators": ["ma", "macd", "rsi"],
+        "features": [file.name[:-4] for file in Path(path).iterdir() if file.is_file()],
+    }
+    dl = DataLoader(config=config)
     features = dl.load_data(
         "2024-11-11 00:00:00",
         "2024-11-11 23:54:00",
