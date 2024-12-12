@@ -37,4 +37,4 @@ repos:
         - types-PyYAML  # Type stubs for PyYAML
         - pandas-stubs  # Type stubs for pandas
         - numpy  # Type stubs for numpy
-        exclude: ^tests/
+        exclude: ^tests/|^examples/

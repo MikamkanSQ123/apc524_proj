@@ -1,7 +1,9 @@
 import os
 import traceback
 import time
+from typing import Any
 from uuid import uuid4
+from pathlib import Path
 import matplotlib
 
 matplotlib.use("Agg")  # Use a non-GUI backend for server-side rendering
@@ -113,13 +115,19 @@ def run_backtest() -> Union[Response, Tuple[Response, int]]:
 
         # Run backtest
         backtest = Backtester(strategy_file, config_file)
+        source = "local"
+        path = f"tests/test_data/data/{source}/feature/"
         config = {
-            "data_path": "./src/simple_backtester/data/feature/",
-            "features": ["close", "price", "return", "volume"],
+            "source": source,
+            "data_path": path,
+            # "tech_indicators": ["ma", "macd", "rsi"],
+            "features": [
+                file.name[:-4] for file in Path(path).iterdir() if file.is_file()
+            ],
         }
         backtest.run(config)
         print(f"Backtest started at {time.time() - start_time} seconds")
-        results = backtest.get_results()
+        results: dict[str, Any] = backtest.get_results()  # type: ignore[assignment]
 
         # Generate PnL plot
         pnl_history = results.get("pnl_history")
