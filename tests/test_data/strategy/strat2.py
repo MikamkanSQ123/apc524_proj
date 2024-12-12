@@ -11,4 +11,7 @@ class MeanReversion(Strategy):
             [np.mean(data[-w:], axis=0) for w in self.parameters.ma_window]
         )
         signal = np.dot((ma_window - ma_base).T, self.parameters.cross_weight)
-        return (signal - np.mean(signal)) / np.std(signal)
+        if signal.shape[0] == 1:
+            return signal
+        else:
+            return (signal - np.mean(signal)) / np.std(signal)

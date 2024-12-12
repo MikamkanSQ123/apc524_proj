@@ -13,8 +13,8 @@ setup:
   start_date: "2022-01-01 04:16:00"
   end_date: "2022-01-01 22:18:00"
   universe:
-    - "BTC/USD"
     - "1INCH/USD"
+    - "AAVE/USD"
   warm_up: 100
   look_back: 100
   initial_capital: 0
