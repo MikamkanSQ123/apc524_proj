@@ -69,7 +69,7 @@ class Strategy(ABC):
         self._setup = SetupConfig(**config["setup"])
         self._parameters = SimpleNamespace()
         if "parameters" in config:
-            for key, value in config["parameters"].items():
+            for key, value in config.get("parameters", {}).items():
                 setattr(self.parameters, key, value)
         self._risk = RiskConfig(**config["risk"]) if "risk" in config else RiskConfig()
 
