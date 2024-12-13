@@ -11,7 +11,7 @@ from numpy.typing import NDArray
 from .data_protocol import Numeric
 from numpy import floating
 from datetime import datetime, timedelta
-from tqdm import tqdm
+from tqdm import tqdm  # type: ignore[import-untyped]
 
 
 class Backtester:
@@ -160,14 +160,18 @@ class Backtester:
         assert close is not None
         assert close["close"] is not None
 
-        close_to_close = close["close"].diff(1).fillna(0).reset_index()
+        close_to_close = (
+            close["close"].diff(1).fillna(0).iloc[1:].reset_index(drop=True)
+        )
         universe_size = len(self.strategy.setup.universe)
         pnl_history = []
 
         # Initialize with zeros for PnL tracking
         init_weights = np.zeros(universe_size)
 
-        for i in tqdm(range(len(first_data) - self.lookback), desc="Backtesting Progress"):
+        for i in tqdm(
+            range(len(first_data) - self.lookback), desc="Backtesting Progress"
+        ):
             # Simulate strategy evaluation and trading
             for feature_name in self.features:
                 feature_data = data.get(feature_name)
@@ -184,7 +188,10 @@ class Backtester:
                 )
 
             curr_weights = self.strategy.eval()
-            transaction_cost = self.strategy.setup.rate_transaction_cost * np.abs(curr_weights - init_weights).sum()
+            transaction_cost = (
+                self.strategy.setup.rate_transaction_cost
+                * np.abs(curr_weights - init_weights).sum()
+            )
             period_pnl: float = np.sum(
                 (curr_weights - init_weights) * close_to_close.iloc[i][self.symbols]
             )

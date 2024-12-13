@@ -7,6 +7,7 @@ import torch.optim as optim
 from torch.utils.data import DataLoader, TensorDataset
 from sklearn.preprocessing import StandardScaler
 
+
 class MLP(nn.Module):
     def __init__(self, input_dim, hidden_layers, output_dim, dropout_rate):
         super(MLP, self).__init__()
@@ -23,6 +24,7 @@ class MLP(nn.Module):
     def forward(self, x):
         return self.network(x)
 
+
 class Strat_CTA_MLP(Strategy):
     def evaluate(self):
         # Set random seed for reproducibility
@@ -38,12 +40,12 @@ class Strat_CTA_MLP(Strategy):
 
         # Collect all matrices from strategy.features
         X_data_matrices = []
-        y_data = getattr(self.features, 'return')[:-2]
+        y_data = getattr(self.features, "return")[:-2]
 
         # Loop through all attributes in strategy.features
         for feature_name in vars(self.features):
             matrix = getattr(self.features, feature_name)
-            if feature_name == 'return':
+            if feature_name == "return":
                 X_data_matrices.append(matrix[:-2].reshape(-1, 1))
             else:
                 X_data_matrices.append(matrix[1:-1].reshape(-1, 1))
@@ -73,11 +75,16 @@ class Strat_CTA_MLP(Strategy):
             batch_size=self.parameters.batch_size,
             shuffle=True,
             num_workers=0,
-            worker_init_fn=seed_worker
+            worker_init_fn=seed_worker,
         )
 
         # Initialize model, loss function, and optimizer
-        model = MLP(self.parameters.input_dim, self.parameters.hidden_layers, self.parameters.output_dim, self.parameters.dropout_rate)
+        model = MLP(
+            self.parameters.input_dim,
+            self.parameters.hidden_layers,
+            self.parameters.output_dim,
+            self.parameters.dropout_rate,
+        )
         criterion = nn.MSELoss()
         optimizer = optim.Adam(model.parameters(), lr=self.parameters.learning_rate)
 
@@ -88,11 +95,11 @@ class Strat_CTA_MLP(Strategy):
                 optimizer.zero_grad()
                 outputs = model(X_batch)
                 loss = criterion(outputs, y_batch)
-                
+
                 # Add weight penalty
                 l2_penalty = sum(param.pow(1.0).sum() for param in model.parameters())
                 loss += self.parameters.penalty * l2_penalty
-                
+
                 loss.backward()
                 optimizer.step()
 
@@ -100,7 +107,7 @@ class Strat_CTA_MLP(Strategy):
         X_test_data_matrices = []
         for feature_name in vars(self.features):
             matrix = getattr(self.features, feature_name)
-            if feature_name == 'return':
+            if feature_name == "return":
                 X_test_data_matrices.append(matrix[-2].reshape(-1, 1))
             else:
                 X_test_data_matrices.append(matrix[-1].reshape(-1, 1))

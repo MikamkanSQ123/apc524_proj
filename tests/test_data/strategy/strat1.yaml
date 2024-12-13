@@ -14,6 +14,7 @@ setup:
   initial_capital: 0
   features:
     - "close"
+  rate_transaction_cost: 0.0
 
 parameters:
   ma_base: 10
