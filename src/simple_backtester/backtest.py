@@ -11,6 +11,7 @@ from numpy.typing import NDArray
 from .data_protocol import Numeric
 from numpy import floating
 from datetime import datetime, timedelta
+from tqdm import tqdm
 
 
 class Backtester:
@@ -166,7 +167,7 @@ class Backtester:
         # Initialize with zeros for PnL tracking
         init_weights = np.zeros(universe_size)
 
-        for i in range(len(first_data) - self.lookback):
+        for i in tqdm(range(len(first_data) - self.lookback), desc="Backtesting Progress"):
             # Simulate strategy evaluation and trading
             for feature_name in self.features:
                 feature_data = data.get(feature_name)
