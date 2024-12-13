@@ -184,9 +184,11 @@ class Backtester:
                 )
 
             curr_weights = self.strategy.eval()
+            transaction_cost = self.strategy.setup.rate_transaction_cost * np.abs(curr_weights - init_weights).sum()
             period_pnl: float = np.sum(
                 (curr_weights - init_weights) * close_to_close.iloc[i][self.symbols]
             )
+            period_pnl -= transaction_cost  # Subtract transaction cost from PnL
             self.strategy._Strategy__pnl.append(period_pnl)  # type: ignore[attr-defined]
             init_weights = curr_weights
             pnl_history.append(period_pnl)

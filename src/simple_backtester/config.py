@@ -17,6 +17,7 @@ class SetupConfig:
     initial_capital: float
     universe: List[str]
     features: List[str]
+    rate_transaction_cost: float = 0.0  # Add transaction cost parameter
 
 
 @dataclass(frozen=True)

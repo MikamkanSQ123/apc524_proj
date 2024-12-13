@@ -29,6 +29,9 @@ class YamlParser:
     def load_yaml(self) -> Dict[str, Any]:
         with open(self.file_path, "r") as file:
             data: Dict[str, Any] = yaml.safe_load(file)
+        # Ensure rate_transaction_cost is set
+        if "setup" in data and "rate_transaction_cost" not in data["setup"]:
+            data["setup"]["rate_transaction_cost"] = 0.0
         return data
 
     def save_yaml(self, data: Dict[str, Any]) -> None:
