@@ -1,0 +1,67 @@
+strategy:
+  name: "Strat_Long_Short_Ridge"
+  description: "Long Short Strategy on cross-sectional dimension by Ridge"
+  source: "strat_LS_ridge.py"
+
+setup:
+  start_date: "2024-11-11 04:16:00"
+  end_date: "2024-11-11 22:18:00"
+  universe:
+    - "BTC"
+    - "ZRX"
+    - "SUSHI"
+    - "YFI"
+    - "COMP"
+    - "MKR"
+    - "RUNE"
+    - "ENJ"
+    - "CHZ"
+    - "KSM"
+    - "GRT"
+    - "XMR"
+    - "ETC"
+    - "UNI"
+    - "OP"
+    - "LDO"
+    - "HBAR"
+    - "THETA"
+    - "AXS"
+    - "EGLD"
+    - "SAND"
+    - "FTM"
+    - "ICP"
+    - "VET"
+    - "NEAR"
+    - "AAVE"
+    - "FIL"
+    - "ATOM"
+    - "XLM"
+    - "LINK"
+    - "AVAX"
+    - "LTC"
+    - "DOT"
+    - "ACT"
+    - "SOL"
+    - "DOGE"
+    - "ADA"
+    - "XRP"
+    - "BNB"
+    - "ETH"
+  warm_up: 100
+  look_back: 100
+  initial_capital: 0
+  features:
+    - "close"
+    - "price"
+    - "volume"
+    - "return"
+  rate_transaction_cost: 0.000000001
+
+parameters:
+  ma_windows: [5, 10, 25, 50, 100]
+  alphas: [0.00001, 0.0001, 0.001, 0.01, 0.1, 1, 10]
+  cv: 5
+
+risk:
+  stop_loss: 0.02
+  take_profit: 0.05

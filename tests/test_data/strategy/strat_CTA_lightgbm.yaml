@@ -1,0 +1,37 @@
+strategy:
+  name: "Strat_CTA_LightGBM"
+  description: "CTA Strategy for BTC by LightGBM"
+  source: "strat_CTA_lightgbm.py"
+
+setup:
+  start_date: "2024-11-11 04:16:00"
+  end_date: "2024-11-11 22:18:00"
+  universe:
+    - "BTC"
+  warm_up: 1000
+  look_back: 1000
+  initial_capital: 0
+  features:
+    - "close"
+    - "price"
+    - "volume"
+    - "return"
+  rate_transaction_cost: 0.000000001
+
+parameters:
+  objective: "regression"
+  metric: "mse"
+  boosting_type: "gbdt"
+  learning_rate: 0.01
+  num_leaves: 50
+  max_depth: 3
+  min_data_in_leaf: 30
+  feature_fraction: 0.5
+  bagging_fraction: 0.25
+  bagging_freq: 10
+  lambda_l1: 1e-7
+  lambda_l2: 1e-7
+
+risk:
+  stop_loss: 0.02
+  take_profit: 0.05
