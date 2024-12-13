@@ -2,10 +2,12 @@ import pandas as pd
 from typing import Any, Union
 from .techlib import Techlib
 from pathlib import Path
-import ccxt  # type: ignore[import-not-found]
+from .source import Source, localSource, ccxtSource
 
 
 class DataLoader:
+    source: Source
+
     def __init__(self, config: dict[str, Any]):
         self.config = config
         # Data path should be provided
@@ -13,6 +15,13 @@ class DataLoader:
         if not Path(config["data_path"]).exists():
             raise FileNotFoundError(f"Path {config['data_path']} not found")
         print(f'Loading data from {config["data_path"]}')
+
+        # Get source
+        source = config.get("source", "local")
+        if source == "ccxt":
+            self.source = ccxtSource()
+        else:
+            self.source = localSource()
 
         # Features should be provided
         if "features" not in config:
@@ -71,23 +80,36 @@ class DataLoader:
         Return:
             dict[str, Union[None, pd.DataFrame]]: dictionary of features key: feature name, value: feature data
         """
-        if base:
-            assert base in self.config["features"]
-            self.load_from_file(base)
+        basic_features, tech_indicators, features_not_found = [], [], []
+        for feature in features:
+            if feature in self.config["features"]:
+                basic_features.append(feature)
+            elif feature in self.config["tech_indicators"]:
+                tech_indicators.append(feature)
+            else:
+                features_not_found.append(feature)
 
         features_dict: dict[str, Any] = {}
-        for feature in features:
-            # load data from local files if it already exists in path
-            if feature in self.config["features"]:
-                self.load_from_file(feature)
-                try:
-                    features_dict[feature] = self.data[feature][symbols][start:end]  # type: ignore[misc]
-                except KeyError:
-                    print(f"Error: {symbols} at {start}:{end} not found in local!")
-                    features_dict[feature] = None
-            # calculate technical indicators
-            elif feature in self.config["tech_indicators"]:
-                assert base, "Base feature should be provided for technical indicators"
+        # load data from local files if it already exists in path
+        for feature in basic_features:
+            self.load_from_file(feature)
+            try:
+                features_dict[feature] = self.data[feature][symbols][start:end]  # type: ignore[misc]
+            except KeyError:
+                print(f"Error: {symbols} at {start}:{end} not found in local!")
+                features_dict[feature] = None
+        # For not found features
+        features_not_found += [f for f in features_dict if features_dict[f] is None]
+        dict_not_found = self.source.load_data(start, end, symbols, features_not_found)
+        self.data.update(dict_not_found)
+        features_dict.update(dict_not_found)
+        # calculate technical indicators
+        if tech_indicators:
+            assert base, "Base feature should be provided for technical indicators"
+            assert (
+                base in features_dict and features_dict[base] is not None
+            ), f"Base feature {base} not found"
+            for feature in tech_indicators:
                 farg = args.get(feature, [])
                 if not isinstance(farg, list):
                     farg = [farg]
@@ -100,162 +122,11 @@ class DataLoader:
                 features_dict[name] = eval(
                     f"Techlib.{feature}(self.data[base][symbols], *farg)"
                 ).loc[start:end]  # type: ignore[misc]
-        # For not found features
-        features_not_found = [
-            f
-            for f in features
-            if (f not in self.config["features"])
-            and (f not in self.config["tech_indicators"])
-        ]
-        features_not_found += [f for f in features_dict if features_dict[f] is None]
-
-        if features_not_found:
-            print(f"Features not found: {features_not_found}")
-            # Fetch online sources if data missing
-            if self.config["source"] == "ccxt":
-                print("Fetching data from ccxt...")
-                dict_not_found = ccxtFetcher.load_data(
-                    start, end, symbols, features_not_found
-                )
-                self.data.update(dict_not_found)
-                features_dict.update(dict_not_found)
         return features_dict
 
     def _test(self) -> Union[pd.DataFrame, "pd.Series[Any]"]:
         "A test function to check if the class is working"
         return Techlib.ma(pd.Series(list(range(100))), 10)
-
-
-class ccxtFetcher(object):
-    def __init__(self) -> None:
-        pass
-
-    @staticmethod
-    def is_feasible(exchange: Union[str, ccxt.Exchange], func: str) -> bool:
-        """
-        Check if the exchange in ccxt supports the function
-        Args:
-            exchange (Union[str, ccxt.Exchange]): exchange name or a ccxt exchange object (Eg. "binanceus")
-            func (str): function name specialized in cxxt (Eg. "fetchOHLCV")
-        Returns:
-            bool: True if the function is supported
-        """
-        try:
-            if isinstance(exchange, str):
-                exchange = getattr(ccxt, exchange)()
-            if exchange.has[func]:
-                return True
-        except Exception:
-            # Handle exceptions (e.g., API errors, unsupported methods)
-            return False
-        return False
-
-    @staticmethod
-    def get_time(
-        start: Union[str, pd.Timestamp], end: Union[str, pd.Timestamp], freq: str = "D"
-    ) -> Any:
-        "Generate time range"
-        return pd.date_range(start, end, freq=freq).strftime("%Y-%m-%d").tolist()
-
-    @staticmethod
-    def get_tick(
-        exchange: Union[str, ccxt.Exchange],
-        symbol: str,
-        date: str,
-        timeframe: str = "1m",
-        bars: int = 100000,
-    ) -> Any:
-        """
-        Get tick(date) data from ccxt
-
-        Args:
-            exchange (Union[str, ccxt.Exchange]): exchange name or a ccxt exchange object (Eg. "binanceus")
-            symbol (str): symbol name (Eg. "BTC/USDT")
-            date (str): date (Eg. "2022-01-01") / timestamp (Eg. "2022-01-01 00:00:00")
-            timeframe (str): timeframe (Eg. "1m")
-            bars (int): number of data to fetch (Eg. 100000) (this API has a limit for bars at one time)
-
-        Return:
-            Any: DataFrame of tick data
-        """
-        if isinstance(exchange, str):
-            exchange = getattr(ccxt, exchange)()
-        since = exchange.parse8601(f"{date}T00:00:00Z")
-        # since = exchange.parse8601(date)
-        assert ccxtFetcher.is_feasible(exchange, "fetchOHLCV")
-        ohlcv = exchange.fetch_ohlcv(symbol, timeframe, since, bars)
-
-        df = pd.DataFrame(
-            ohlcv, columns=["timestamp", "open", "high", "low", "close", "volume"]
-        )
-        df["timestamp"] = pd.to_datetime(df["timestamp"], unit="ms")
-        df.set_index("timestamp", inplace=True)
-        return df
-
-    @staticmethod
-    def get_data(
-        exchange: Union[str, ccxt.Exchange],
-        symbols: list[str],
-        start: Union[str, pd.Timestamp],
-        end: Union[str, pd.Timestamp],
-        timeframe: str = "1m",
-    ) -> Any:
-        """
-        Merge symbols tick data and reframe features
-
-        Args:
-            exchange (Union[str, ccxt.Exchange]): exchange name or a ccxt exchange object (Eg. "binanceus")
-            symbols (list[str]): list of symbols (Eg. ["BTC/USDT", "ETH/USDT"])
-            start (Union[str, pd.Timestamp]): start time
-            end (Union[str, pd.Timestamp]): end time
-            timeframe (str): timeframe (Eg. "1m")
-
-        Return:
-            Any: DataFrame of tick data with all required symbols
-        """
-        time = ccxtFetcher.get_time(start, end)
-        dfs = pd.DataFrame()
-        for t in time:
-            for symbol in symbols:
-                try:
-                    df = ccxtFetcher.get_tick(exchange, symbol, t, timeframe)
-                    df["symbol"] = symbol
-                    dfs = pd.concat([dfs, df], axis=0)
-                except Exception as e:
-                    print(f"Error: {e} when running {exchange} {symbol} {t}")
-        return dfs
-
-    @staticmethod
-    def load_data(
-        start: Union[str, pd.Timestamp],
-        end: Union[str, pd.Timestamp],
-        symbols: list[str],
-        features: list[str],
-        exchange: str = "binanceus",
-        timeframe: str = "1m",
-    ) -> Any:
-        """
-        Get required features from ccxt and return as a dictionary
-
-        Args:
-            start (Union[str, pd.Timestamp]): start time
-            end (Union[str, pd.Timestamp]): end time
-            symbols (list[str]): list of symbols (Eg. ["BTC/USDT", "ETH/USDT"])
-            features (list[str]): list of features (Eg. ["open", "close", "volume"])
-            exchange (str): exchange name (Eg. "binanceus")
-            timeframe (str): timeframe (Eg. "1m")
-
-        Return:
-            Any: dictionary of features key: feature name, value: feature data
-        """
-        possible_features = ["open", "high", "low", "close", "volume"]
-        fts = [f for f in features if f in possible_features]
-        df = ccxtFetcher.get_data(exchange, symbols, start, end, timeframe)
-        features_dict = {
-            col: df.pivot(columns="symbol", values=col)[start:end]  # type: ignore[misc]
-            for col in fts
-        }
-        return features_dict
 
 
 if __name__ == "__main__":
