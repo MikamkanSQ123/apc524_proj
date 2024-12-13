@@ -3,48 +3,155 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Backtest Strategy Platform</title>
+    <title>Backtest Your Strategy</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        h1, h2 {
+            color: #333;
+        }
+        #results {
+            margin-top: 20px;
+        }
+        img {
+            max-width: 100%;
+            height: auto;
+            margin-top: 20px;
+        }
+        .error {
+            color: red;
+        }
+        .hidden {
+            display: none;
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+    </style>
 </head>
 <body>
-    <h1>Backtest Strategy Platform</h1>
-    <form id="uploadForm" method="post" action="/upload" enctype="multipart/form-data">
-        <label for="config_file">Upload Configuration File (YAML):</label><br>
-        <input type="file" id="config_file" name="config_file" accept=".yaml"><br><br>
+    <h1>Backtest Your Strategy</h1>
 
-        <label for="data_file">Upload Market Data File (CSV):</label><br>
-        <input type="file" id="data_file" name="data_file" accept=".csv"><br><br>
-
-        <button type="submit">Run Backtest</button>
+    <form id="uploadStrategyForm">
+        <label for="strategy">Upload Strategy File (.py):</label><br>
+        <input type="file" id="strategy" name="strategy" accept=".py" required><br><br>
+        <button type="submit">Upload Strategy</button>
     </form>
+
+    <form id="uploadConfigForm" style="margin-top: 20px;">
+        <label for="config">Upload Configuration File (.yaml):</label><br>
+        <input type="file" id="config" name="config" accept=".yaml" required><br><br>
+        <button type="submit">Upload Configuration</button>
+    </form>
+
+    <button id="runBacktestButton" style="margin-top: 20px;" disabled>Run Backtest</button>
 
     <h2>Results</h2>
     <div id="results">
-        <p>No results yet.</p>
+        <p><strong>Cumulative PnL:</strong> <span id="cumulative_pnl"></span></p>
+        <p><strong>Sharpe Ratio:</strong> <span id="sharpe_ratio"></span></p>
+        <p><strong>Volatility:</strong> <span id="volatility"></span></p>
+        <p><strong>Max Drawdown:</strong> <span id="max_drawdown"></span></p>
+        <p id="error-message" class="error hidden"></p>
     </div>
 
-    <script>
-        document.getElementById('uploadForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            const formData = new FormData(this);
+    <h2>PnL Plot</h2>
+    <img id="pnl_plot" src="" alt="PnL History Plot" style="display: none;">
 
-            const response = await fetch('/upload', {
+    <script>
+        let strategyUploaded = false;
+        let configUploaded = false;
+
+        async function uploadFile(fileType, file) {
+            const formData = new FormData();
+            formData.append(fileType, file);
+
+            const response = await fetch(`http://127.0.0.1:5000/upload/${fileType}`, {
                 method: 'POST',
-                body: formData
+                body: formData,
             });
 
-            const resultsDiv = document.getElementById('results');
-            if (response.ok) {
-                const data = await response.json();
-                resultsDiv.innerHTML = `
-                    <p><strong>Sharpe Ratio:</strong> ${data.metrics['Sharpe Ratio'].toFixed(2)}</p>
-                    <p><strong>Volatility:</strong> ${data.metrics['Volatility'].toFixed(2)}</p>
-                    <p><strong>Max Drawdown:</strong> ${data.metrics['Max Drawdown'].toFixed(2)}</p>
-                    <a href="/download/results.csv">Download Results</a><br><br>
-                    <img src="/plot/${data.plot_file}" alt="Backtest Plot" style="max-width: 100%; height: auto;">
-                `;
+            return response.json();
+        }
+
+        function resetForm() {
+            document.getElementById('strategy').value = '';
+            document.getElementById('config').value = '';
+            document.getElementById('runBacktestButton').disabled = true;
+            strategyUploaded = false;
+            configUploaded = false;
+        }
+
+        function checkRunBacktestButton() {
+            document.getElementById('runBacktestButton').disabled = !(strategyUploaded && configUploaded);
+        }
+
+        document.getElementById('uploadStrategyForm').addEventListener('submit', async function (event) {
+            event.preventDefault();
+
+            const strategyFile = document.getElementById('strategy').files[0];
+            if (!strategyFile) {
+                alert('Please select a strategy file.');
+                return;
+            }
+
+            const result = await uploadFile('strategy', strategyFile);
+            if (result.file_path) {
+                strategyUploaded = true;
+                alert('Strategy file uploaded successfully.');
+                checkRunBacktestButton();
             } else {
-                const error = await response.json();
-                resultsDiv.innerHTML = `<p>Error: ${error.error}</p>`;
+                alert(result.error || 'Failed to upload strategy file.');
+            }
+        });
+
+        document.getElementById('uploadConfigForm').addEventListener('submit', async function (event) {
+            event.preventDefault();
+
+            const configFile = document.getElementById('config').files[0];
+            if (!configFile) {
+                alert('Please select a configuration file.');
+                return;
+            }
+
+            const result = await uploadFile('config', configFile);
+            if (result.file_path) {
+                configUploaded = true;
+                alert('Configuration file uploaded successfully.');
+                checkRunBacktestButton();
+            } else {
+                alert(result.error || 'Failed to upload configuration file.');
+            }
+        });
+
+        document.getElementById('runBacktestButton').addEventListener('click', async function () {
+            try {
+                const response = await fetch('http://127.0.0.1:5000/run_backtest', { method: 'POST' });
+                const result = await response.json();
+
+                if (response.ok) {
+                    document.getElementById('cumulative_pnl').textContent = result['cumulative_pnl'];
+                    document.getElementById('sharpe_ratio').textContent = result['Sharpe Ratio'];
+                    document.getElementById('volatility').textContent = result['Volatility'];
+                    document.getElementById('max_drawdown').textContent = result['Max Drawdown'];
+
+                    const pnlPlot = document.getElementById('pnl_plot');
+                    pnlPlot.src = `${result['plot_url']}`;
+                    pnlPlot.style.display = 'block';
+
+                    alert('Backtest completed successfully. Please upload new files for another backtest.');
+                } else {
+                    alert(result.error || 'An error occurred while running the backtest.');
+                }
+
+                // Reset form after backtest
+                resetForm();
+            } catch (error) {
+                console.error('Error running backtest:', error);
+                alert('An unexpected error occurred.');
             }
         });
     </script>

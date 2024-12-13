@@ -9,6 +9,7 @@ from .preprocess.dataloader import DataLoader
 from typing import Any, Union, Optional, Type, List
 from numpy.typing import NDArray
 from .data_protocol import Numeric
+from numpy import floating
 from datetime import datetime, timedelta
 
 
@@ -37,7 +38,7 @@ class Backtester:
         # Instantiate the strategy
         self.strategy_list = self.strategy_class.from_yaml(config_path)
 
-        self.pnl_history: List[NDArray] = []
+        self.pnl_history: List[NDArray[floating[Any]]] = []
         self.cumulative_pnl: List[Numeric] = []
         self.sharpe_ratio: List[Numeric] = []
         self.volatility: List[Numeric] = []
