@@ -159,7 +159,7 @@ class Backtester:
         assert close is not None
         assert close["close"] is not None
 
-        close_to_close = close["close"].diff(1).dropna().reset_index()
+        close_to_close = close["close"].diff(1).fillna(0).reset_index()
         universe_size = len(self.strategy.setup.universe)
         pnl_history = []
 
