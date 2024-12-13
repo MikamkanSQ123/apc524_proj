@@ -3,6 +3,7 @@ from typing import Any, Union
 import ccxt  # type: ignore[import-not-found]
 from abc import ABC, abstractmethod
 
+
 class Source(ABC):
     name: str
 
