@@ -12,7 +12,7 @@ license = { file = "LICENSE" }
 authors = [
     { name = "Zhuolin Xiang", email = "xiangzhuolin19@gmail.com" },
     { name = "Haoqian Zhang", email = "zhanghq.chn@gmail.com" },
-    { name = "Yuheng Zheng", email = "yz1234@princeton.edu" },
+    { name = "Yuheng Zheng", email = "hengcurry892@gmail.com" },
     { name = "Siqing Zou", email = "siqingzou1@gmail.com" },
 ]
 classifiers = [
@@ -32,7 +32,11 @@ dependencies = [
     "pyyaml",
     "pandas>=1.3.0",
     "ccxt",
-    "matplotlib"
+    "matplotlib",
+    "scikit-learn",
+    "lightgbm",
+    "torch",
+    "tqdm"
 ]
 
 [project.optional-dependencies]
