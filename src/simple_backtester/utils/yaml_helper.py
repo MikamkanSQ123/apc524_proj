@@ -8,17 +8,19 @@ from collections.abc import Iterable
 
 class YamlParser:
     """
-    A class to parse and save YAML files.
-
-    Attributes:
-        file_path (str): The path to the YAML file.
+    A utility class for parsing and manipulating YAML files.
 
     Methods:
+        __init__(file_path: Union[str, Path]) -> None:
+            Initializes the YamlParser with the path to the YAML file.
         load_yaml() -> Dict[str, Any]:
-            Loads and returns the contents of the YAML file as a dictionary.
-
+            Loads the YAML file and returns its contents as a dictionary.
         save_yaml(data: Dict[str, Any]) -> None:
-            Saves the given dictionary data to the YAML file.
+            Saves the provided dictionary to the YAML file.
+        load_yaml_matrix() -> Iterator[Dict[str, Any]]:
+            Loads a matrix from a YAML file and yields dictionaries representing all possible combinations of the matrix values.
+        force_iterable(data: dict[Any, Any]) -> dict[Any, Any]:
+            Recursively converts all dictionary values to lists if they are not already lists.
     """
 
     def __init__(self, file_path: Union[str, Path]) -> None:

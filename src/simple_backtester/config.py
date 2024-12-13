@@ -52,14 +52,13 @@ class Strategy(ABC):
         eval() -> NDArray[np.float64]:
             Evaluates the strategy while applying risk management rules, including stop loss,
             take profit, and cool-down periods.
+
+        from_yaml(config_path: Union[str, Path]) -> List["Strategy"]:
+            Class method to create a list of strategies from a YAML configuration file.
     """
 
     @final
     def __init__(self, config: dict[str, Any]):
-        # if isinstance(config_path, str):
-        #     config_path = Path(config_path)
-        # config: dict[str, Any] = yaml.safe_load(config_path.read_text())
-
         required_sections = {"setup"}
         missing_sections = required_sections - config.keys()
         if missing_sections:
