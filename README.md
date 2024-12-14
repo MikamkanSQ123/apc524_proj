@@ -48,6 +48,10 @@ git checkout -b your-branch-name
 
 4. To run the whole pipeline, refer to examples in `examples/backtest.ipynb`, or you may choose to interact with the front-end interface.
 
+```sh
+python -m simple_backtester.app
+```
+
 ## Contributing
 
 We welcome contributions to the project. Please follow these steps to contribute:
